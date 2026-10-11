@@ -1,4 +1,4 @@
-# ♿ AccessPath v2 — Accessibility Feedback for Public Places
+# ♿ AccessPath v2 — Accessibility  Feedback for Public Places
 ### 🎓 IIT (ISM) Dhanbad Edition — Map, GPS, Photos, Profiles & Smart Notifications
 
 > **Flutter app jo public places ki accessibility discover, assess aur share karne me madad karti hai** — ab full version me: multiple pages, live map with satellite mode, real-time location, photo-proof feedback, saved profiles aur smart dwell-notifications! 🚀
