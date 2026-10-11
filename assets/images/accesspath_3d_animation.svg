@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#141E30" />
+      <stop offset="60%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#05070B" />
+    </radialGradient>
+    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#4FACFE" />
+    </linearGradient>
+    <linearGradient id="neonPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B224EF" />
+      <stop offset="100%" stop-color="#7579FF" />
+    </linearGradient>
+    <linearGradient id="neonGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F5A0" />
+      <stop offset="100%" stop-color="#00D9F5" />
+    </linearGradient>
+    <linearGradient id="cubeTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#4FACFE" stop-opacity="0.7" />
+    </linearGradient>
+    <linearGradient id="cubeLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0052D4" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#1E3C72" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="cubeRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F2027" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#203A43" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Filters for 3D Glow -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glowHigh" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="blur2" />
+      <feComposite in="SourceGraphic" in2="blur2" operator="over" />
+    </filter>
+
+    <style>
+      @keyframes floatSlow {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-18px) rotate(1.5deg); }
+      }
+      @keyframes floatReverse {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(16px) rotate(-1.5deg); }
+      }
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 0.45; filter: drop-shadow(0 0 10px #00F2FE); }
+        50% { opacity: 0.95; filter: drop-shadow(0 0 25px #00F2FE); }
+      }
+      @keyframes dashAnim {
+        to { stroke-dashoffset: -120; }
+      }
+      @keyframes rotate3D {
+        0% { transform: rotateY(0deg) rotateX(15deg); }
+        50% { transform: rotateY(180deg) rotateX(-15deg); }
+        100% { transform: rotateY(360deg) rotateX(15deg); }
+      }
+      @keyframes scanline {
+        0% { transform: translateY(-50px); opacity: 0; }
+        50% { opacity: 0.8; }
+        100% { transform: translateY(450px); opacity: 0; }
+      }
+      @keyframes beaconRing {
+        0% { r: 5; opacity: 1; }
+        100% { r: 60; opacity: 0; stroke-width: 0.5; }
+      }
+      @keyframes textShine {
+        0%, 100% { fill: #ffffff; }
+        50% { fill: #00F2FE; }
+      }
+
+      .floating-3d-card {
+        animation: floatSlow 6s ease-in-out infinite;
+        transform-origin: center;
+      }
+      .floating-3d-card-2 {
+        animation: floatReverse 7s ease-in-out infinite;
+        transform-origin: center;
+      }
+      .pulse-beacon {
+        animation: pulseGlow 3s ease-in-out infinite;
+      }
+      .path-glow {
+        stroke-dasharray: 12, 12;
+        animation: dashAnim 4s linear infinite;
+      }
+      .ring-expand-1 {
+        animation: beaconRing 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+      }
+      .ring-expand-2 {
+        animation: beaconRing 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+        animation-delay: 1.5s;
+      }
+      .scan-beam {
+        animation: scanline 4s ease-in-out infinite;
+      }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="480" rx="16" fill="url(#bgGlow)" />
+  
+  <!-- Subtle Isometric Grid Pattern -->
+  <g opacity="0.15" stroke="#00F2FE" stroke-width="0.8">
+    <path d="M0,80 L1200,80 M0,160 L1200,160 M0,240 L1200,240 M0,320 L1200,320 M0,400 L1200,400" />
+    <path d="M100,0 L100,480 M250,0 L250,480 M400,0 L400,480 M550,0 L550,480 M700,0 L700,480 M850,0 L850,480 M1000,0 L1000,480 M1150,0 L1150,480" />
+    <!-- Isometric perspective diagonals -->
+    <path d="M0,0 L1200,380 M0,100 L1200,480 M0,250 L800,480 M300,0 L1200,280" stroke="#7579FF" stroke-width="0.5" />
+  </g>
+
+  <!-- 3D Perspective Glowing Campus Pathways (Animated Highway of Accessibility) -->
+  <g filter="url(#glow)">
+    <path d="M150,420 C 350,380 450,290 600,270 C 750,250 820,180 980,160" fill="none" stroke="url(#neonCyan)" stroke-width="6" opacity="0.85" />
+    <path d="M150,420 C 350,380 450,290 600,270 C 750,250 820,180 980,160" fill="none" stroke="#FFFFFF" stroke-width="3" class="path-glow" />
+    
+    <!-- Secondary Branch to Library / Herakles -->
+    <path d="M600,270 C 650,330 750,360 880,380" fill="none" stroke="url(#neonPurple)" stroke-width="4" opacity="0.75" />
+    <path d="M600,270 C 650,330 750,360 880,380" fill="none" stroke="#FFFFFF" stroke-width="2" class="path-glow" />
+  </g>
+
+  <!-- Pulsing 3D GPS Beacons -->
+  <!-- Beacon 1: Central Campus Hub -->
+  <g transform="translate(600, 270)">
+    <circle cx="0" cy="0" r="10" fill="#00F2FE" filter="url(#glow)" />
+    <circle cx="0" cy="0" r="5" fill="#FFFFFF" />
+    <circle cx="0" cy="0" r="10" fill="none" stroke="#00F2FE" stroke-width="2" class="ring-expand-1" />
+    <circle cx="0" cy="0" r="10" fill="none" stroke="#00F2FE" stroke-width="2" class="ring-expand-2" />
+  </g>
+
+  <!-- Beacon 2: Herakles Hostel -->
+  <g transform="translate(880, 380)">
+    <circle cx="0" cy="0" r="8" fill="#B224EF" filter="url(#glow)" />
+    <circle cx="0" cy="0" r="4" fill="#FFFFFF" />
+    <circle cx="0" cy="0" r="8" fill="none" stroke="#B224EF" stroke-width="2" class="ring-expand-1" />
+  </g>
+
+  <!-- Beacon 3: Central Library -->
+  <g transform="translate(980, 160)">
+    <circle cx="0" cy="0" r="8" fill="#00F5A0" filter="url(#glow)" />
+    <circle cx="0" cy="0" r="4" fill="#FFFFFF" />
+    <circle cx="0" cy="0" r="8" fill="none" stroke="#00F5A0" stroke-width="2" class="ring-expand-1" />
+  </g>
+
+  <!-- LEFT: 3D Holographic App Phone & Navigation Card -->
+  <g class="floating-3d-card" transform="translate(120, 70)">
+    <!-- Glassmorphic Card Container -->
+    <rect width="360" height="310" rx="20" fill="#0C1527" fill-opacity="0.82" stroke="url(#neonCyan)" stroke-width="2" filter="url(#glow)" />
+    <rect width="360" height="310" rx="20" fill="none" stroke="#ffffff" stroke-width="0.7" opacity="0.3" />
+
+    <!-- App Header Badge -->
+    <rect x="24" y="24" width="46" height="46" rx="12" fill="url(#neonCyan)" />
+    <text x="47" y="55" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#050B14" text-anchor="middle">♿</text>
+    
+    <text x="82" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="800" fill="#FFFFFF" letter-spacing="0.5">AccessPath 3D</text>
+    <text x="82" y="62" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#00F2FE">IIT (ISM) DHANBAD · CAMPUS NAV</text>
+
+    <!-- Score Metric Hologram -->
+    <g transform="translate(24, 88)">
+      <rect width="312" height="64" rx="12" fill="#132238" stroke="#1F3657" stroke-width="1" />
+      <circle cx="36" cy="32" r="20" fill="#00F5A0" fill-opacity="0.15" stroke="#00F5A0" stroke-width="2" />
+      <text x="36" y="37" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="900" fill="#00F5A0" text-anchor="middle">94</text>
+      <text x="70" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">Herakles Hostel &amp; Central Library</text>
+      <text x="70" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#8899B5">2 High-Speed Lifts · Ramp · Step-free Mess</text>
+    </g>
+
+    <!-- Interactive Badges inside Card -->
+    <g transform="translate(24, 166)">
+      <!-- Badge 1: Divyang Verified -->
+      <rect x="0" y="0" width="148" height="34" rx="8" fill="#1C1838" stroke="#B224EF" stroke-width="1.2" />
+      <text x="74" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#E0A7FF" text-anchor="middle">♿ Divyang Rated</text>
+
+      <!-- Badge 2: OpenRouter AI -->
+      <rect x="160" y="0" width="152" height="34" rx="8" fill="#122838" stroke="#00F2FE" stroke-width="1.2" />
+      <text x="236" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" fill="#80E8FF" text-anchor="middle">🤖 AccessBot AI Live</text>
+    </g>
+
+    <!-- Quick Status / Location Tracking -->
+    <g transform="translate(24, 216)">
+      <rect width="312" height="66" rx="12" fill="#0F1B2B" stroke="#253E5E" stroke-width="1" />
+      <text x="16" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="#00F2FE">📍 GPS STATUS: CONNECTED (30s DWELL)</text>
+      <text x="16" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" fill="#758BA5">Automatic dwell prompt triggers within 150m</text>
+    </g>
+  </g>
+
+  <!-- RIGHT: 3D Floating Isometric Cubes & Architectural Pillars -->
+  <!-- 3D Cube Cluster 1: Elevator & Ramp Pillar -->
+  <g class="floating-3d-card-2" transform="translate(680, 50)">
+    <!-- 3D Isometric Cube (Top, Left, Right) -->
+    <!-- Top Face -->
+    <polygon points="120,40 180,75 120,110 60,75" fill="url(#cubeTop)" />
+    <!-- Left Face -->
+    <polygon points="60,75 120,110 120,200 60,165" fill="url(#cubeLeft)" />
+    <!-- Right Face -->
+    <polygon points="120,110 180,75 180,165 120,200" fill="url(#cubeRight)" />
+    
+    <!-- Neon Highlights on edges -->
+    <line x1="120" y1="40" x2="180" y2="75" stroke="#FFFFFF" stroke-width="1.5" />
+    <line x1="60" y1="75" x2="120" y2="110" stroke="#FFFFFF" stroke-width="1.5" />
+    <line x1="120" y1="110" x2="120" y2="200" stroke="#00F2FE" stroke-width="2" filter="url(#glow)" />
+    
+    <!-- Pillar Icon / Text -->
+    <text x="120" y="80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="bold" fill="#050B14" text-anchor="middle">🛗</text>
+    
+    <!-- Floating Tag beside Cube -->
+    <g transform="translate(195, 100)">
+      <rect width="180" height="42" rx="10" fill="#0C1527" fill-opacity="0.9" stroke="url(#neonCyan)" stroke-width="1.5" filter="url(#glow)" />
+      <text x="90" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">5 Floors · 2 Dual Lifts</text>
+    </g>
+  </g>
+
+  <!-- 3D Isometric Cube 2: Accessible Washroom Pillar -->
+  <g class="floating-3d-card" transform="translate(940, 240)">
+    <polygon points="80,20 125,46 80,72 35,46" fill="url(#neonPurple)" />
+    <polygon points="35,46 80,72 80,140 35,114" fill="#3D1863" />
+    <polygon points="80,72 125,46 125,114 80,140" fill="#240C3E" />
+    <line x1="80" y1="72" x2="80" y2="140" stroke="#B224EF" stroke-width="2" filter="url(#glow)" />
+    <text x="80" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" text-anchor="middle">🚻</text>
+    
+    <g transform="translate(-160, 60)">
+      <rect width="150" height="40" rx="10" fill="#0C1527" fill-opacity="0.9" stroke="url(#neonPurple)" stroke-width="1.5" filter="url(#glow)" />
+      <text x="75" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="bold" fill="#E0A7FF" text-anchor="middle">2 Accessible/Floor</text>
+    </g>
+  </g>
+
+  <!-- Android APK Direct Download Callout Tag -->
+  <g class="floating-3d-card" transform="translate(680, 275)">
+    <rect width="250" height="52" rx="14" fill="#052416" stroke="#00F5A0" stroke-width="2" filter="url(#glow)" />
+    <text x="32" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18">📱</text>
+    <text x="60" y="25" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#00F5A0">ANDROID APK READY</text>
+    <text x="60" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#C5FFE8">AccessPath_IIT_ISM_Dhanbad.apk</text>
+  </g>
+
+  <!-- Horizontal Scanning Laser Beam effect -->
+  <line x1="80" y1="200" x2="1120" y2="200" stroke="url(#neonCyan)" stroke-width="1.5" opacity="0.25" class="scan-beam" />
+</svg>
