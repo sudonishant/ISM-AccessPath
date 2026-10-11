@@ -59,19 +59,35 @@ class ProfilePage extends StatelessWidget {
           progressToNext = xp / 50;
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final pageBg = isDark ? const Color(0xFF0B132B) : const Color(0xFFF1F5F9);
+        final appBarBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+        final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+        final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+        final accentColor = isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E);
+
         return Scaffold(
-          backgroundColor: const Color(0xFF0B132B),
+          backgroundColor: pageBg,
           appBar: AppBar(
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: appBarBg,
             elevation: 0,
-            title: const Text(
+            title: Text(
               'Campus Community Profile',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             actions: [
+              // Theme toggle button
+              IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                  color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
+                ),
+                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                onPressed: () => store.toggleTheme(),
+              ),
               TextButton.icon(
-                icon: const Icon(Icons.swap_horiz_rounded, size: 18, color: Color(0xFF00F0FF)),
-                label: const Text('Switch Account', style: TextStyle(color: Color(0xFF00F0FF), fontWeight: FontWeight.bold)),
+                icon: Icon(Icons.swap_horiz_rounded, size: 18, color: accentColor),
+                label: Text('Switch Account', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -166,9 +182,16 @@ class ProfilePage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF131F37),
+                  color: isDark ? const Color(0xFF131F37) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: tierColor.withValues(alpha: 0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,15 +227,15 @@ class ProfilePage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
                         value: progressToNext.clamp(0.05, 1.0),
-                        backgroundColor: const Color(0xFF1E293B),
+                        backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                         valueColor: AlwaysStoppedAnimation<Color>(tierColor),
                         minHeight: 8,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Every verified review gives +50 XP · Photo attachment gives +30 XP · New campus venue gives +100 XP',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      style: TextStyle(color: textSecondary, fontSize: 11),
                     ),
                   ],
                 ),
@@ -220,9 +243,9 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Contribution Statistics Grid (Reviews, Places, Photos, Impact)
-              const Text(
+              Text(
                 'My Campus Contributions:',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               Row(
@@ -232,6 +255,7 @@ class ProfilePage extends StatelessWidget {
                     count: '$myReviewsCount',
                     icon: Icons.rate_review_rounded,
                     color: const Color(0xFF00F0FF),
+                    isDark: isDark,
                   ),
                   const SizedBox(width: 10),
                   _buildStatTile(
@@ -239,6 +263,7 @@ class ProfilePage extends StatelessWidget {
                     count: '$myPlacesCount',
                     icon: Icons.add_location_alt_rounded,
                     color: const Color(0xFFF59E0B),
+                    isDark: isDark,
                   ),
                 ],
               ),
@@ -250,6 +275,7 @@ class ProfilePage extends StatelessWidget {
                     count: '$photoCount',
                     icon: Icons.photo_camera_rounded,
                     color: const Color(0xFF10B981),
+                    isDark: isDark,
                   ),
                   const SizedBox(width: 10),
                   _buildStatTile(
@@ -257,6 +283,7 @@ class ProfilePage extends StatelessWidget {
                     count: '${(myReviewsCount * 14) + 25}',
                     icon: Icons.volunteer_activism_rounded,
                     color: const Color(0xFFB224EF),
+                    isDark: isDark,
                   ),
                 ],
               ),
@@ -321,9 +348,9 @@ class ProfilePage extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Detailed Contribution History List
-              const Text(
+              Text(
                 'Recent Contribution Activity:',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
 
@@ -331,17 +358,17 @@ class ProfilePage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF131F37),
+                    color: isDark ? const Color(0xFF131F37) : Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF1E293B)),
+                    border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                   ),
                   alignment: Alignment.center,
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.history_rounded, color: Color(0xFF64748B), size: 36),
-                      SizedBox(height: 8),
-                      Text('No reviews submitted yet.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                      Text('Visit Herakles Hostel or Central Library to submit your first feedback!', style: TextStyle(color: Color(0xFF64748B), fontSize: 11), textAlign: TextAlign.center),
+                      Icon(Icons.history_rounded, color: textSecondary, size: 36),
+                      const SizedBox(height: 8),
+                      Text('No reviews submitted yet.', style: TextStyle(color: textSecondary, fontSize: 13)),
+                      Text('Visit Herakles Hostel or Central Library to submit your first feedback!', style: TextStyle(color: textSecondary, fontSize: 11), textAlign: TextAlign.center),
                     ],
                   ),
                 )
@@ -351,16 +378,16 @@ class ProfilePage extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF131F37),
+                      color: isDark ? const Color(0xFF131F37) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF1E293B)),
+                      border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E293B),
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 20),
@@ -372,14 +399,14 @@ class ProfilePage extends StatelessWidget {
                             children: [
                               Text(
                                 item.place.name,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 item.review.comment.isNotEmpty ? item.review.comment : 'Verified Accessibility Review',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                style: TextStyle(color: textSecondary, fontSize: 11),
                               ),
                             ],
                           ),
@@ -411,14 +438,22 @@ class ProfilePage extends StatelessWidget {
     required String count,
     required IconData icon,
     required Color color,
+    required bool isDark,
   }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF131F37),
+          color: isDark ? const Color(0xFF131F37) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: isDark ? color.withValues(alpha: 0.3) : const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,12 +461,12 @@ class ProfilePage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                Text(label, style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold)),
                 Icon(icon, color: color, size: 18),
               ],
             ),
             const SizedBox(height: 6),
-            Text(count, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(count, style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 20, fontWeight: FontWeight.w900)),
           ],
         ),
       ),

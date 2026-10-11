@@ -40,6 +40,14 @@ class _ExplorePageState extends State<ExplorePage> {
           ..sort((a, b) => (store.distanceTo(a) ?? 1e9)
               .compareTo(store.distanceTo(b) ?? 1e9));
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final brandTitleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+        final brandSubColor = isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E);
+        final searchBg = isDark ? const Color(0xFF131F37) : Colors.white;
+        final searchBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+        final searchHintColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+        final searchTextColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
         return Scaffold(
           body: SafeArea(
             child: Column(
@@ -67,36 +75,36 @@ class _ExplorePageState extends State<ExplorePage> {
                                     errorBuilder: (_, __, ___) => Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFCCFBF1),
+                                        color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.15) : const Color(0xFFCCFBF1),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.accessible_forward_rounded,
-                                        color: Color(0xFF0F766E),
+                                        color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
                                         size: 20,
                                       ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'AccessPath',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.5,
-                                    color: Color(0xFF0F172A),
+                                    color: brandTitleColor,
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 2),
-                            const Text(
+                            Text(
                               'IIT (ISM) Dhanbad',
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                color: brandSubColor,
                               ),
                             ),
                           ],
@@ -105,12 +113,47 @@ class _ExplorePageState extends State<ExplorePage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Theme Toggle Button (Dark 🌙 / Light ☀️)
+                          GestureDetector(
+                            onTap: () => store.toggleTheme(),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.4) : const Color(0xFFF59E0B),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                    size: 13,
+                                    color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isDark ? 'Light' : 'Dark',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark ? Colors.white : const Color(0xFFB45309),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Cloud Sync Indicator
                           GestureDetector(
                             onTap: () {
                               store.syncWithBackend();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('🔄 Backend server sync running...'),
+                                  content: Text('🔄 Backend server & Firebase sync running...'),
                                   duration: Duration(seconds: 1),
                                   behavior: SnackBarBehavior.floating,
                                 ),
@@ -150,6 +193,7 @@ class _ExplorePageState extends State<ExplorePage> {
                               ),
                             ),
                           ),
+                          const SizedBox(width: 6),
                           GestureDetector(
                             onTap: () => Navigator.push(
                               context,
@@ -213,20 +257,20 @@ class _ExplorePageState extends State<ExplorePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF131F37),
+                      color: searchBg,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFF1E293B)),
+                      border: Border.all(color: searchBorder),
                     ),
                     child: TextField(
                       controller: _searchCtrl,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: searchTextColor),
                       decoration: InputDecoration(
                         hintText: 'Search campus building, library, canteen...',
-                        hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                        prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF00F0FF), size: 22),
+                        hintStyle: TextStyle(color: searchHintColor, fontSize: 14),
+                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E), size: 22),
                         suffixIcon: query.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18, color: Color(0xFF94A3B8)),
+                                icon: Icon(Icons.clear, size: 18, color: searchHintColor),
                                 onPressed: () {
                                   _searchCtrl.clear();
                                   setState(() => query = '');
@@ -246,12 +290,12 @@ class _ExplorePageState extends State<ExplorePage> {
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                   child: Row(
                     children: [
-                      const Text(
+                      Text(
                         'Filter by Needs',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                           letterSpacing: 0.1,
                         ),
                       ),
@@ -260,13 +304,13 @@ class _ExplorePageState extends State<ExplorePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF00F0FF),
+                            color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '${needs.length} Active',
                             style: const TextStyle(
-                              color: Color(0xFF0B132B),
+                              color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -276,10 +320,10 @@ class _ExplorePageState extends State<ExplorePage> {
                       if (needs.isNotEmpty)
                         GestureDetector(
                           onTap: () => setState(() => needs.clear()),
-                          child: const Text(
+                          child: Text(
                             'Reset',
                             style: TextStyle(
-                              color: Color(0xFF00F0FF),
+                              color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -297,6 +341,12 @@ class _ExplorePageState extends State<ExplorePage> {
                     children: List.generate(5, (i) {
                       final c = kCategories[i];
                       final isSelected = needs.contains(i);
+                      final chipBg = isDark ? const Color(0xFF131F37) : Colors.white;
+                      final chipBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+                      final selectedChipBg = isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E);
+                      final selectedChipText = isDark ? const Color(0xFF0B132B) : Colors.white;
+                      final unselectedChipText = isDark ? Colors.white : const Color(0xFF334155);
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: FilterChip(
@@ -305,17 +355,17 @@ class _ExplorePageState extends State<ExplorePage> {
                           labelStyle: TextStyle(
                             fontSize: 12,
                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            color: isSelected ? const Color(0xFF0B132B) : Colors.white,
+                            color: isSelected ? selectedChipText : unselectedChipText,
                           ),
                           selected: isSelected,
-                          selectedColor: const Color(0xFF00F0FF),
-                          backgroundColor: const Color(0xFF131F37),
-                          checkmarkColor: const Color(0xFF0B132B),
+                          selectedColor: selectedChipBg,
+                          backgroundColor: chipBg,
+                          checkmarkColor: selectedChipText,
                           showCheckmark: false,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF1E293B),
+                              color: isSelected ? selectedChipBg : chipBorder,
                             ),
                           ),
                           onSelected: (s) => setState(() {
@@ -457,6 +507,12 @@ class _ExplorePageState extends State<ExplorePage> {
 
   Widget _buildPlaceCard(BuildContext context, Place p) {
     final d = store.distanceTo(p);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF131F37) : Colors.white;
+    final cardBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+    final chipBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final nameColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final divColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
 
     return InkWell(
       onTap: () => Navigator.push(
@@ -467,12 +523,12 @@ class _ExplorePageState extends State<ExplorePage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF131F37),
+          color: cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF1E293B)),
+          border: Border.all(color: cardBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
+              color: isDark ? Colors.black.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -494,15 +550,15 @@ class _ExplorePageState extends State<ExplorePage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B),
+                              color: chipBg,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               p.type.toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF00F0FF),
+                                color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -531,10 +587,10 @@ class _ExplorePageState extends State<ExplorePage> {
                       const SizedBox(height: 6),
                       Text(
                         p.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: nameColor,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -589,7 +645,7 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFF1E293B)),
+            Divider(height: 1, color: divColor),
             const SizedBox(height: 12),
 
             // Middle Row: 5 Category Accessibility Badges Preview
@@ -604,10 +660,10 @@ class _ExplorePageState extends State<ExplorePage> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: chipBg,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isAvailable ? const Color(0xFF10B981) : const Color(0xFF334155),
+                      color: isAvailable ? const Color(0xFF10B981) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                     ),
                   ),
                   child: Row(
@@ -620,7 +676,7 @@ class _ExplorePageState extends State<ExplorePage> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: isAvailable ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                          color: isAvailable ? const Color(0xFF10B981) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                         ),
                       ),
                     ],

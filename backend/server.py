@@ -56,6 +56,25 @@ class SyncHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
     def do_GET(self):
+        # APK Direct Download Endpoint
+        if self.path in ["/download/apk", "/api/download/apk", "/AccessPath_IIT_ISM_Dhanbad.apk"]:
+            apk_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "AccessPath_IIT_ISM_Dhanbad.apk")
+            if os.path.exists(apk_path):
+                file_size = os.path.getsize(apk_path)
+                self.send_response(200)
+                self._send_cors_headers()
+                self.send_header("Content-Type", "application/vnd.android.package-archive")
+                self.send_header("Content-Disposition", 'attachment; filename="AccessPath_IIT_ISM_Dhanbad.apk"')
+                self.send_header("Content-Length", str(file_size))
+                self.end_headers()
+                with open(apk_path, "rb") as f:
+                    while chunk := f.read(65536):
+                        self.wfile.write(chunk)
+                return
+            else:
+                self._send_json_response(404, {"error": "APK file not found on server"})
+                return
+
         # Health check
         if self.path == "/" or self.path == "/api/health":
             self._send_json_response(200, {

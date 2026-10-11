@@ -6,18 +6,24 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 import 'data.dart';
+import 'services/firebase_service.dart';
 
 class AppStore extends ChangeNotifier {
   List<Place> places = [];
   AppUser? currentUser; // Logged-in user (Student or Admin)
   Position? myPos;
 
-  // Backend sync config
+  // Dynamic Theme mode (Dark & Light support)
+  ThemeMode themeMode = ThemeMode.dark;
+  bool get isDarkMode => themeMode == ThemeMode.dark;
+
+  // Backend sync config (Local Server & Firebase Cloud)
   bool isSyncing = false;
   bool isOnline = true;
   Timer? _syncTimer;
@@ -57,6 +63,9 @@ class AppStore extends ChangeNotifier {
     final hasOpenedBefore = sp.getBool('hasOpenedBefore') ?? false;
     isFirstTimeUser = !hasOpenedBefore;
 
+    final isDark = sp.getBool('isDarkMode') ?? true;
+    themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+
     final userJson = sp.getString('currentUser');
     if (userJson != null) {
       currentUser = AppUser.fromJson(jsonDecode(userJson));
@@ -78,9 +87,23 @@ class AppStore extends ChangeNotifier {
         ? (jsonDecode(dj) as List).map((e) => Place.fromJson(e)).toList()
         : seedPlaces();
 
-    // Start background sync with backend server
+    // Start background sync with backend server & Firebase Cloud
     syncWithBackend();
     _startSyncTimer();
+  }
+
+  Future<void> toggleTheme() async {
+    themeMode = (themeMode == ThemeMode.dark) ? ThemeMode.light : ThemeMode.dark;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('isDarkMode', themeMode == ThemeMode.dark);
+    notifyListeners();
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    themeMode = mode;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('isDarkMode', themeMode == ThemeMode.dark);
+    notifyListeners();
   }
 
   void _startSyncTimer() {
@@ -107,17 +130,18 @@ class AppStore extends ChangeNotifier {
     }
     sp.setString('places', jsonEncode(places.map((p) => p.toJson()).toList()));
 
-    // Also push to backend asynchronously
+    // Also push to backend server and Firebase Cloud asynchronously
     syncWithBackend();
   }
 
-  // Two-way synchronization with backend
+  // Two-way synchronization with backend server & Firebase
   Future<void> syncWithBackend() async {
     // In automated widget testing, avoid outgoing HTTP calls
     if (kDebugMode && Platform.environment.containsKey('FLUTTER_TEST')) return;
     if (isSyncing) return;
     isSyncing = true;
     try {
+      // 1. Sync with Local Server
       final uri = Uri.parse('$serverBaseUrl/api/places/sync');
       final res = await http
           .post(
@@ -142,15 +166,21 @@ class AppStore extends ChangeNotifier {
           }
         }
       }
+
+      // 2. Sync to Firebase Cloud
+      await FirebaseService.instance.syncPlacesToFirebase(places);
     } catch (e) {
-      // Backend offline or unreachable - falls back cleanly to local offline DB
+      // Try Firebase if local server unreachable
+      try {
+        await FirebaseService.instance.syncPlacesToFirebase(places);
+      } catch (_) {}
       isOnline = false;
     } finally {
       isSyncing = false;
     }
   }
 
-  // Poll updates from backend (pulls newly added reviews / lift toggles from other devices)
+  // Poll updates from backend & Firebase
   Future<void> pullUpdatesFromBackend() async {
     if (kDebugMode && Platform.environment.containsKey('FLUTTER_TEST')) return;
     try {
@@ -168,11 +198,20 @@ class AppStore extends ChangeNotifier {
             final sp = await SharedPreferences.getInstance();
             sp.setString('places', jsonEncode(places.map((p) => p.toJson()).toList()));
             notifyListeners();
+            return;
           }
         }
       }
     } catch (_) {
       isOnline = false;
+      // Fallback: poll from Firebase Cloud
+      try {
+        final fbPlaces = await FirebaseService.instance.fetchPlacesFromFirebase();
+        if (fbPlaces != null && fbPlaces.isNotEmpty) {
+          places = fbPlaces;
+          notifyListeners();
+        }
+      } catch (_) {}
     }
   }
 

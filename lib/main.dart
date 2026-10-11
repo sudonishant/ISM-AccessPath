@@ -28,64 +28,123 @@ class AccessPathApp extends StatelessWidget {
   const AccessPathApp({super.key});
 
   @override
-  @override
   Widget build(BuildContext context) {
     const primaryCyan = Color(0xFF00F0FF); // Electric Cyan Accent
+    const primaryTeal = Color(0xFF0F766E); // Heritage Teal for light mode
     const bgDark = Color(0xFF0B132B); // Deep Space Navy
     const surfaceDark = Color(0xFF131F37); // Dark Slate Surface
+    const bgLight = Color(0xFFF8FAFC); // Clean Slate 50
+    const surfaceLight = Colors.white;
 
-    return MaterialApp(
-      title: 'AccessPath — IIT (ISM) Dhanbad',
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navKey,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: bgDark,
-        colorScheme: const ColorScheme.dark(
-          primary: primaryCyan,
-          secondary: Color(0xFF10B981),
-          surface: surfaceDark,
-          onSurface: Colors.white,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          backgroundColor: Color(0xFF0F172A),
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'AccessPath — IIT (ISM) Dhanbad',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: navKey,
+          themeMode: store.themeMode,
+          // Light Theme
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: bgLight,
+            colorScheme: const ColorScheme.light(
+              primary: primaryTeal,
+              secondary: Color(0xFF059669),
+              surface: surfaceLight,
+              onSurface: Color(0xFF0F172A),
+              outline: Color(0xFFE2E8F0),
+            ),
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: Colors.white,
+              titleTextStyle: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+              iconTheme: IconThemeData(color: Color(0xFF0F172A)),
+            ),
+            cardTheme: CardThemeData(
+              elevation: 0,
+              color: surfaceLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+              ),
+              margin: EdgeInsets.zero,
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              height: 68,
+              backgroundColor: Colors.white,
+              elevation: 8,
+              indicatorColor: const Color(0xFF0F766E).withValues(alpha: 0.15),
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                final isSelected = states.contains(WidgetState.selected);
+                return TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                );
+              }),
+            ),
           ),
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          color: surfaceDark,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0xFF1E293B), width: 1),
+          // Dark Theme
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: bgDark,
+            colorScheme: const ColorScheme.dark(
+              primary: primaryCyan,
+              secondary: Color(0xFF10B981),
+              surface: surfaceDark,
+              onSurface: Colors.white,
+              outline: Color(0xFF1E293B),
+            ),
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: Color(0xFF0F172A),
+              titleTextStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.3,
+              ),
+              iconTheme: IconThemeData(color: Colors.white),
+            ),
+            cardTheme: CardThemeData(
+              elevation: 0,
+              color: surfaceDark,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: const BorderSide(color: Color(0xFF1E293B), width: 1),
+              ),
+              margin: EdgeInsets.zero,
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              height: 68,
+              backgroundColor: const Color(0xFF0F172A),
+              elevation: 8,
+              indicatorColor: const Color(0xFF00F0FF).withValues(alpha: 0.2),
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                final isSelected = states.contains(WidgetState.selected);
+                return TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF64748B),
+                );
+              }),
+            ),
           ),
-          margin: EdgeInsets.zero,
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          height: 68,
-          backgroundColor: const Color(0xFF0F172A),
-          elevation: 8,
-          indicatorColor: const Color(0xFF00F0FF).withValues(alpha: 0.2),
-          labelTextStyle: WidgetStateProperty.resolveWith((states) {
-            final isSelected = states.contains(WidgetState.selected);
-            return TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF64748B),
-            );
-          }),
-        ),
-      ),
-      home: const Shell(),
+          home: const Shell(),
+        );
+      },
     );
   }
 }
@@ -312,18 +371,25 @@ class _ShellState extends State<Shell> {
       builder: (context, constraints) {
         final isLargeWeb = constraints.maxWidth >= 840;
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final sidebarBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+        final sidebarBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+        final contentBg = isDark ? const Color(0xFF0B132B) : const Color(0xFFF1F5F9);
+        final cardBg = isDark ? const Color(0xFF131F37) : const Color(0xFFF8FAFC);
+        final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+
         if (isLargeWeb) {
           // React/Next.js-style Premium Modern Dashboard Layout for Web / Desktop
           return Scaffold(
             body: Row(
               children: [
-                // Modern Cyberpunk Web Sidebar matching AI Assistant
+                // Modern Web Sidebar matching AI Assistant
                 Container(
                   width: 270,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF0F172A),
+                  decoration: BoxDecoration(
+                    color: sidebarBg,
                     border: Border(
-                      right: BorderSide(color: Color(0xFF1E293B), width: 1.2),
+                      right: BorderSide(color: sidebarBorder, width: 1.2),
                     ),
                   ),
                   child: Column(
@@ -352,32 +418,34 @@ class _ShellState extends State<Shell> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'AccessPath',
-                                  style: TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.5,
-                                    color: Colors.white,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'AccessPath',
+                                    style: TextStyle(
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                      color: titleColor,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  'IIT (ISM) Dhanbad',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF00F0FF),
+                                  const Text(
+                                    'IIT (ISM) Dhanbad',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF0F766E),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const Divider(height: 1, color: Color(0xFF1E293B)),
+                      Divider(height: 1, color: sidebarBorder),
                       const SizedBox(height: 16),
 
                       // Navigation Items
@@ -403,17 +471,54 @@ class _ShellState extends State<Shell> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E293B),
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.3)),
+                                  border: Border.all(color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.3) : const Color(0xFFCBD5E1)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   children: [
-                                    Icon(Icons.assessment_rounded, size: 20, color: Color(0xFF00F0FF)),
-                                    SizedBox(width: 12),
+                                    const Icon(Icons.assessment_rounded, size: 20, color: Color(0xFF0F766E)),
+                                    const SizedBox(width: 12),
                                     Text(
                                       'Audit Reports & Admin',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: titleColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Theme Switcher Tile in Sidebar
+                            InkWell(
+                              onTap: () => store.toggleTheme(),
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF131F37) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.4) : const Color(0xFFF59E0B),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                      size: 19,
+                                      color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        isDark ? 'Switch to Light Mode ☀️' : 'Switch to Dark Mode 🌙',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: titleColor,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -430,9 +535,9 @@ class _ShellState extends State<Shell> {
                         margin: const EdgeInsets.all(16),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF131F37),
+                          color: cardBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF1E293B)),
+                          border: Border.all(color: sidebarBorder),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,9 +560,9 @@ class _ShellState extends State<Shell> {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            const Text(
+                            Text(
                               'Herakles Hostel: 5 Floors, 2 Lifts, 10 Washrooms verified.',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.35),
+                              style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), height: 1.35),
                             ),
                           ],
                         ),
@@ -469,7 +574,7 @@ class _ShellState extends State<Shell> {
                 // Main Content Area
                 Expanded(
                   child: Container(
-                    color: const Color(0xFF0B132B),
+                    color: contentBg,
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1200),
@@ -484,42 +589,47 @@ class _ShellState extends State<Shell> {
         }
 
         // Mobile / Tablet Screen Layout
+        final navBarBg = isDark ? const Color(0xFF0F172A) : Colors.white;
+        final navBarBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+        final navSelectedColor = isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E);
+        final navUnselectedColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+
         return Scaffold(
           body: IndexedStack(index: tab, children: pages),
           bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF0F172A),
-              border: Border(top: BorderSide(color: Color(0xFF1E293B))),
+            decoration: BoxDecoration(
+              color: navBarBg,
+              border: Border(top: BorderSide(color: navBarBorder)),
             ),
             child: NavigationBar(
               selectedIndex: tab,
               onDestinationSelected: (i) => setState(() => tab = i),
-              backgroundColor: const Color(0xFF0F172A),
-              indicatorColor: const Color(0xFF00F0FF).withValues(alpha: 0.2),
-              destinations: const [
+              backgroundColor: navBarBg,
+              indicatorColor: navSelectedColor.withValues(alpha: 0.18),
+              destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.explore_outlined, color: Color(0xFF64748B)),
-                  selectedIcon: Icon(Icons.explore_rounded, color: Color(0xFF00F0FF)),
+                  icon: Icon(Icons.explore_outlined, color: navUnselectedColor),
+                  selectedIcon: Icon(Icons.explore_rounded, color: navSelectedColor),
                   label: 'Explore',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.map_outlined, color: Color(0xFF64748B)),
-                  selectedIcon: Icon(Icons.map_rounded, color: Color(0xFF00F0FF)),
+                  icon: Icon(Icons.map_outlined, color: navUnselectedColor),
+                  selectedIcon: Icon(Icons.map_rounded, color: navSelectedColor),
                   label: 'Map',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.add_location_alt_outlined, color: Color(0xFF64748B)),
-                  selectedIcon: Icon(Icons.add_location_alt_rounded, color: Color(0xFF00F0FF)),
+                  icon: Icon(Icons.add_location_alt_outlined, color: navUnselectedColor),
+                  selectedIcon: Icon(Icons.add_location_alt_rounded, color: navSelectedColor),
                   label: 'Add Place',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.auto_awesome_outlined, color: Color(0xFF64748B)),
-                  selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFF00F0FF)),
+                  icon: Icon(Icons.auto_awesome_outlined, color: navUnselectedColor),
+                  selectedIcon: Icon(Icons.auto_awesome, color: navSelectedColor),
                   label: 'AI Helper',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.person_outline_rounded, color: Color(0xFF64748B)),
-                  selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF00F0FF)),
+                  icon: Icon(Icons.person_outline_rounded, color: navUnselectedColor),
+                  selectedIcon: Icon(Icons.person_rounded, color: navSelectedColor),
                   label: 'Profile',
                 ),
               ],
@@ -532,6 +642,10 @@ class _ShellState extends State<Shell> {
 
   Widget _webNavTile(int index, IconData unselectedIcon, IconData selectedIcon, String label) {
     final isSelected = tab == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E);
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
@@ -543,16 +657,16 @@ class _ShellState extends State<Shell> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF00F0FF).withValues(alpha: 0.15) : Colors.transparent,
+              color: isSelected ? activeColor.withValues(alpha: 0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(14),
-              border: isSelected ? Border.all(color: const Color(0xFF00F0FF), width: 1.2) : null,
+              border: isSelected ? Border.all(color: activeColor, width: 1.2) : null,
             ),
             child: Row(
               children: [
                 Icon(
                   isSelected ? selectedIcon : unselectedIcon,
                   size: 20,
-                  color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF64748B),
+                  color: isSelected ? activeColor : inactiveColor,
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -560,7 +674,7 @@ class _ShellState extends State<Shell> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF94A3B8),
+                    color: isSelected ? activeColor : inactiveColor,
                   ),
                 ),
               ],
