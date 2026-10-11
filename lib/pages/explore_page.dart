@@ -7,6 +7,7 @@ import '../models.dart';
 import '../store.dart';
 import 'detail_page.dart';
 import 'auth_page.dart';
+import 'ai_chat_page.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -56,16 +57,25 @@ class _ExplorePageState extends State<ExplorePage> {
                           children: [
                             Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFCCFBF1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.accessible_forward_rounded,
-                                    color: Color(0xFF0F766E),
-                                    size: 20,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                    'assets/logo/accesspath_logo.png',
+                                    width: 32,
+                                    height: 32,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFCCFBF1),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.accessible_forward_rounded,
+                                        color: Color(0xFF0F766E),
+                                        size: 20,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -135,6 +145,39 @@ class _ExplorePageState extends State<ExplorePage> {
                                       fontWeight: FontWeight.w700,
                                       color: store.isOnline ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
                                     ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const AIChatPage()),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF14B8A6).withValues(alpha: 0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.auto_awesome, size: 12, color: Colors.white),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'AI Helper',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
                                 ],
                               ),

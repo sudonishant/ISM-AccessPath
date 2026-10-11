@@ -12,6 +12,8 @@ import 'pages/map_page.dart';
 import 'pages/add_place_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/detail_page.dart';
+import 'pages/ai_chat_page.dart';
+import 'pages/auth_page.dart';
 
 final navKey = GlobalKey<NavigatorState>();
 
@@ -96,6 +98,7 @@ class _ShellState extends State<Shell> {
     ExplorePage(),
     MapPage(),
     AddPlacePage(),
+    AIChatPage(),
     ProfilePage(),
   ];
 
@@ -103,7 +106,106 @@ class _ShellState extends State<Shell> {
   void initState() {
     super.initState();
     store.onDwell = _showDwellNotification;
-    WidgetsBinding.instance.addPostFrameCallback((_) => store.startWatch());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      store.startWatch();
+      if (store.isFirstTimeUser) {
+        _showFirstTimeOnboardingDialog();
+      }
+    });
+  }
+
+  void _showFirstTimeOnboardingDialog() {
+    final ctx = navKey.currentContext;
+    if (ctx == null) return;
+
+    showDialog(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xFF00F0FF), width: 1.2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/logo/accesspath_logo.png',
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.accessible_forward, size: 50, color: Color(0xFF00F0FF)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Welcome to AccessPath',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'IIT (ISM) Dhanbad Accessibility System',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF00F0FF)),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Discover barrier-free campus routes, inspect elevator & washroom status across all 5 floors of Herak Hostel, and contribute verified reviews for Divyangjan community.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8), height: 1.4),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF334155)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () {
+                        store.completeOnboarding();
+                        Navigator.pop(ctx);
+                      },
+                      child: const Text('Explore First', style: TextStyle(color: Color(0xFF94A3B8))),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () {
+                        store.completeOnboarding();
+                        Navigator.pop(ctx);
+                        Navigator.push(
+                          ctx,
+                          MaterialPageRoute(builder: (_) => const AuthPage()),
+                        );
+                      },
+                      child: const Text('Login / Setup 👤', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showDwellNotification(Place p) {
@@ -233,24 +335,26 @@ class _ShellState extends State<Shell> {
                         padding: const EdgeInsets.fromLTRB(24, 28, 20, 24),
                         child: Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF0F766E).withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.asset(
+                                'assets/logo/accesspath_logo.png',
+                                width: 44,
+                                height: 44,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                ],
+                                  child: const Icon(Icons.accessible_forward_rounded, color: Colors.white, size: 24),
+                                ),
                               ),
-                              child: const Icon(Icons.accessible_forward_rounded, color: Colors.white, size: 24),
                             ),
                             const SizedBox(width: 12),
                             const Column(
@@ -289,7 +393,8 @@ class _ShellState extends State<Shell> {
                             _webNavTile(0, Icons.explore_outlined, Icons.explore_rounded, 'Explore Places'),
                             _webNavTile(1, Icons.map_outlined, Icons.map_rounded, 'Campus Map'),
                             _webNavTile(2, Icons.add_location_alt_outlined, Icons.add_location_alt_rounded, 'Contribute Venue'),
-                            _webNavTile(3, Icons.person_outline_rounded, Icons.person_rounded, 'My Profile & Admin'),
+                            _webNavTile(3, Icons.auto_awesome_outlined, Icons.auto_awesome, 'AI Campus Assistant 🤖'),
+                            _webNavTile(4, Icons.person_outline_rounded, Icons.person_rounded, 'My Profile & Admin'),
                           ],
                         ),
                       ),
@@ -389,6 +494,11 @@ class _ShellState extends State<Shell> {
                   icon: Icon(Icons.add_location_alt_outlined),
                   selectedIcon: Icon(Icons.add_location_alt_rounded, color: Color(0xFF0F766E)),
                   label: 'Add Place',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.auto_awesome_outlined),
+                  selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFF0F766E)),
+                  label: 'AI Helper',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.person_outline_rounded),

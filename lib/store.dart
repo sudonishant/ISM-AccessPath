@@ -21,6 +21,7 @@ class AppStore extends ChangeNotifier {
   bool isSyncing = false;
   bool isOnline = true;
   Timer? _syncTimer;
+  bool isFirstTimeUser = false;
 
   // Auto-detect server URL depending on platform
   String get serverBaseUrl {
@@ -53,6 +54,8 @@ class AppStore extends ChangeNotifier {
 
   Future<void> load() async {
     final sp = await SharedPreferences.getInstance();
+    final hasOpenedBefore = sp.getBool('hasOpenedBefore') ?? false;
+    isFirstTimeUser = !hasOpenedBefore;
 
     final userJson = sp.getString('currentUser');
     if (userJson != null) {
@@ -86,6 +89,13 @@ class AppStore extends ChangeNotifier {
     _syncTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       pullUpdatesFromBackend();
     });
+  }
+
+  Future<void> completeOnboarding() async {
+    isFirstTimeUser = false;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool('hasOpenedBefore', true);
+    notifyListeners();
   }
 
   Future<void> save() async {

@@ -120,13 +120,16 @@ class AppUser {
 // REVIEW
 // ------------------------------------------------------------
 class Review {
-  final List<int> scores; // 5 categories (1-5)
+  // 5 categories nullable (1-5, or null if skipped by user)
+  final List<int?> scores;
   final String comment;
   final String user;
   final String? userRole; // e.g. "Admin", "Student"
   final String? photoPath;
-  final String? targetTag; // Specific single feature review (e.g., 'Lift #1', 'Ground Ramp', 'Accessible Washroom', 'Braille Signage')
+  final String? targetTag; // Specific single feature review (e.g. '🛗 Ground Entrance Ramp')
   final int? targetFloor; // Specific floor reviewed (0 = Ground, 1 = 1st, etc.)
+  final String userCategory; // 'general' or 'disabled'
+  final String? disabilityType; // e.g. 'Wheelchair / Mobility', 'Visual Impairment', 'Hearing Impairment', 'Elderly / Crutches', 'Other'
   int upvotes; // Community verified helpfulness count
   final DateTime time;
 
@@ -138,9 +141,19 @@ class Review {
     this.photoPath,
     this.targetTag,
     this.targetFloor,
+    this.userCategory = 'general',
+    this.disabilityType,
     this.upvotes = 0,
     DateTime? time,
   }) : time = time ?? DateTime.now();
+
+  bool get isSpecialNeeds => userCategory == 'disabled';
+
+  double get validAvg {
+    final nonNullScores = scores.whereType<int>().toList();
+    if (nonNullScores.isEmpty) return 0.0;
+    return nonNullScores.reduce((a, b) => a + b) / nonNullScores.length;
+  }
 
   Map<String, dynamic> toJson() => {
         's': scores,
@@ -150,18 +163,22 @@ class Review {
         'p': photoPath,
         'tt': targetTag,
         'tf': targetFloor,
+        'uc': userCategory,
+        'dt': disabilityType,
         'up': upvotes,
         't': time.toIso8601String(),
       };
 
   factory Review.fromJson(Map<String, dynamic> j) => Review(
-        scores: List<int>.from(j['s']),
-        comment: j['c'],
-        user: j['u'],
+        scores: (j['s'] as List).map((e) => e == null ? null : (e as num).toInt()).toList(),
+        comment: j['c'] ?? '',
+        user: j['u'] ?? 'Student',
         userRole: j['ur'] ?? 'Student',
         photoPath: j['p'],
         targetTag: j['tt'],
         targetFloor: j['tf'],
+        userCategory: j['uc'] ?? ((j['ur'] != null && j['ur'] != 'Student' && j['ur'] != 'Admin') ? 'disabled' : 'general'),
+        disabilityType: j['dt'],
         upvotes: j['up'] ?? 0,
         time: DateTime.parse(j['t']),
       );
@@ -193,13 +210,32 @@ class Place {
   })  : reviews = reviews ?? [],
         floors = floors ?? [];
 
-  double avg(int i) => reviews.isEmpty
-      ? 0
-      : reviews.map((r) => r.scores[i]).reduce((a, b) => a + b) / reviews.length;
+  List<Review> get generalReviews => reviews.where((r) => !r.isSpecialNeeds).toList();
+  List<Review> get specialReviews => reviews.where((r) => r.isSpecialNeeds).toList();
 
-  int get score => reviews.isEmpty
-      ? 0
-      : (List.generate(5, avg).reduce((a, b) => a + b) / 5 * 20).round();
+  // Average for category i, ignoring reviews where facility was skipped (null)
+  double avg(int i, {String filter = 'all'}) {
+    final list = filter == 'general'
+        ? generalReviews
+        : (filter == 'disabled' ? specialReviews : reviews);
+    final validScores = list
+        .where((r) => i < r.scores.length && r.scores[i] != null)
+        .map((r) => r.scores[i]!)
+        .toList();
+
+    if (validScores.isEmpty) return 0.0;
+    return validScores.reduce((a, b) => a + b) / validScores.length;
+  }
+
+  // Count of reviews that actually evaluated facility i
+  int reviewCountFor(int i) =>
+      reviews.where((r) => i < r.scores.length && r.scores[i] != null).length;
+
+  int get score {
+    final validAvgs = List.generate(5, (i) => avg(i)).where((a) => a > 0).toList();
+    if (validAvgs.isEmpty) return 0;
+    return ((validAvgs.reduce((a, b) => a + b) / validAvgs.length) * 20).round();
+  }
 
   Color get color => reviews.isEmpty
       ? const Color(0xFF94A3B8)

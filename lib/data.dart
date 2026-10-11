@@ -94,7 +94,9 @@ List<Place> seedPlaces() => [
           Review(
             scores: [5, 5, 5, 4, 5],
             user: 'Aman Sharma',
-            userRole: 'Student (Wheelchair User)',
+            userRole: 'Student',
+            userCategory: 'disabled',
+            disabilityType: 'Wheelchair / Mobility',
             comment:
                 'Herak Hostel is the gold standard on campus! Ground ramp is very smooth, 2 elevators work reliably, and every floor has 2 accessible washrooms with solid grab bars.',
             photoPath: 'assets/reviews/herak_ramp.jpeg',
@@ -105,7 +107,9 @@ List<Place> seedPlaces() => [
           Review(
             scores: [5, 5, 4, 4, 4],
             user: 'Priya Patel',
-            userRole: 'Student (Visual Assist)',
+            userRole: 'Student',
+            userCategory: 'disabled',
+            disabilityType: 'Visual Impairment',
             comment:
                 'Tactile floor paving leads right to the elevators. Braille elevator buttons make independent navigation effortless.',
             photoPath: 'assets/reviews/herak_lift.jpeg',
@@ -117,6 +121,7 @@ List<Place> seedPlaces() => [
             scores: [5, 5, 5, 5, 5],
             user: 'Campus Admin',
             userRole: 'Admin',
+            userCategory: 'general',
             comment:
                 'Estate Office Verified: 5 floors inspected. 2 Lifts operational. 10 washrooms per floor maintained daily (2 accessible with grab bars).',
             photoPath: 'assets/reviews/herak_washroom.jpeg',
@@ -156,6 +161,7 @@ List<Place> seedPlaces() => [
           Review(
             scores: [5, 5, 4, 4, 4],
             user: 'Vikas Singh',
+            userCategory: 'general',
             comment: '5 floors with 2 lifts that are always running. 10 washrooms per floor with 2 accessible ones.',
             photoPath: 'assets/reviews/accessible_toilet.jpeg',
           ),
@@ -191,6 +197,7 @@ List<Place> seedPlaces() => [
           Review(
             scores: [4, 4, 4, 4, 4],
             user: 'Rahul',
+            userCategory: 'general',
             comment: 'Ramp entry is well placed. Lifts and washrooms are clean.',
             photoPath: 'assets/reviews/hostel_corridor.jpeg',
           ),
@@ -226,6 +233,7 @@ List<Place> seedPlaces() => [
           Review(
             scores: [4, 4, 4, 3, 4],
             user: 'Aman',
+            userCategory: 'general',
             comment: 'Good infrastructure, step-free access to mess and lifts.',
             photoPath: 'assets/reviews/herak_hostel.jpeg',
           ),
@@ -261,6 +269,8 @@ List<Place> seedPlaces() => [
           Review(
             scores: [5, 5, 5, 5, 5],
             user: 'Sneha Roy',
+            userCategory: 'disabled',
+            disabilityType: 'Wheelchair / Mobility',
             comment: 'Fully accessible academic paradise! Zero barrier entry, 2 modern lifts, accessible restrooms on every level.',
             photoPath: 'assets/reviews/herak_lift.jpeg',
           ),
@@ -296,6 +306,7 @@ List<Place> seedPlaces() => [
           Review(
             scores: [4, 4, 4, 4, 4],
             user: 'Dr. Sen',
+            userCategory: 'general',
             comment: 'Heritage architecture with retrofit elevator and portico ramp.',
             photoPath: 'assets/reviews/herak_ramp.jpeg',
           ),
@@ -331,6 +342,8 @@ List<Place> seedPlaces() => [
           Review(
             scores: [5, 5, 5, 5, 5],
             user: 'Aman',
+            userCategory: 'disabled',
+            disabilityType: 'Wheelchair / Mobility',
             comment: 'World-class lecture complex. Elevators are fast, wheelchair spots have charging points.',
             photoPath: 'assets/reviews/accessible_toilet.jpeg',
           ),
@@ -367,6 +380,7 @@ List<Place> seedPlaces() => [
             scores: [5, 5, 5, 5, 5],
             user: 'Dr. Sen',
             userRole: 'Admin',
+            userCategory: 'general',
             comment: '100% barrier-free medical center. Stretchers and wheelchairs always available.',
             photoPath: 'assets/reviews/herak_washroom.jpeg',
           ),
@@ -413,7 +427,7 @@ List<Place> seedPlaces() => [
           ),
         ],
         reviews: [
-          Review(scores: [4, 4, 4, 5, 4], user: 'Sneha', comment: 'Wheelchair access to the main hall and stage ramp makes convocations inclusive.'),
+          Review(scores: [4, 4, 4, 5, 4], user: 'Sneha', userCategory: 'disabled', disabilityType: 'Wheelchair / Mobility', comment: 'Wheelchair access to the main hall and stage ramp makes convocations inclusive.'),
         ],
       ),
 
@@ -457,7 +471,7 @@ List<Place> seedPlaces() => [
           ),
         ],
         reviews: [
-          Review(scores: [4, 4, 4, 4, 4], user: 'Vikas', comment: 'Ground floor courts and club rooms are step-free. Elevator works fine.'),
+          Review(scores: [4, 4, 4, 4, 4], user: 'Vikas', userCategory: 'general', comment: 'Ground floor courts and club rooms are step-free. Elevator works fine.'),
         ],
       ),
     ];

@@ -22,6 +22,7 @@ class _DetailPageState extends State<DetailPage> {
   int _selectedFloorIndex = 0;
   String _aiTone = 'Standard';
   bool _isAiGenerating = false;
+  String _reviewFilter = 'all'; // 'all', 'disabled', 'general'
 
   Widget _photo(String path, {double h = 160}) {
     Widget imgWidget;
@@ -123,11 +124,26 @@ class _DetailPageState extends State<DetailPage> {
       return;
     }
 
+    // 5 facility scores (nullable if unchecked)
+    final facilityActive = [true, true, true, true, true];
     final scores = [5, 5, 4, 4, 4];
     final commentCtrl = TextEditingController();
     String? photoPath;
     String selectedFeature = 'General Building Experience';
     int? selectedTargetFloor;
+
+    // Dual-tier reviewer type
+    final isUserDisabledByDefault = store.currentUser?.needsPreference != 'None' && store.currentUser?.needsPreference != 'General';
+    String userCategory = isUserDisabledByDefault ? 'disabled' : 'general';
+    String disabilityType = 'Wheelchair / Mobility';
+
+    final disabilityOptions = [
+      'Wheelchair / Mobility',
+      'Visual Impairment',
+      'Hearing Impairment',
+      'Elderly / Crutches',
+      'Other Special Needs',
+    ];
 
     final availableFeatures = [
       'General Building Experience',
@@ -144,11 +160,64 @@ class _DetailPageState extends State<DetailPage> {
       backgroundColor: Colors.transparent,
       builder: (sheetCtx) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final computedOverall = (scores.reduce((a, b) => a + b) / 5 * 20).round();
+          final activeScores = <int>[];
+          for (int i = 0; i < 5; i++) {
+            if (facilityActive[i]) activeScores.add(scores[i]);
+          }
+          final computedOverall = activeScores.isEmpty
+              ? 0
+              : ((activeScores.reduce((a, b) => a + b) / activeScores.length) * 20).round();
+
+          Future<void> pickPhoto(ImageSource source) async {
+            final picker = ImagePicker();
+            final img = await picker.pickImage(source: source, imageQuality: 70);
+            if (img != null) {
+              setSheetState(() => photoPath = img.path);
+            }
+          }
+
+          void showPhotoSourceDialog() {
+            showModalBottomSheet(
+              context: sheetCtx,
+              backgroundColor: const Color(0xFF0F172A),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              builder: (ctx) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Select Photo Source',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: const Icon(Icons.camera_alt_rounded, color: Color(0xFF00F0FF)),
+                        title: const Text('Take Photo with Camera 📸', style: TextStyle(color: Colors.white)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          pickPhoto(ImageSource.camera);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.photo_library_rounded, color: Color(0xFF10B981)),
+                        title: const Text('Choose from Gallery 🖼️', style: TextStyle(color: Colors.white)),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          pickPhoto(ImageSource.gallery);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
 
           return Container(
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: Color(0xFF0F172A),
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             padding: EdgeInsets.only(
@@ -167,7 +236,7 @@ class _DetailPageState extends State<DetailPage> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFCBD5E1),
+                        color: const Color(0xFF334155),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -181,12 +250,12 @@ class _DetailPageState extends State<DetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Share Accessibility Rating',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              'Share Verified Rating',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                             Text(
                               p.name,
-                              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                             ),
                           ],
                         ),
@@ -194,15 +263,16 @@ class _DetailPageState extends State<DetailPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFCCFBF1),
+                          color: const Color(0xFF134E4A),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           '$computedOverall / 100',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F766E),
+                            color: Color(0xFF00F0FF),
                           ),
                         ),
                       ),
@@ -210,32 +280,138 @@ class _DetailPageState extends State<DetailPage> {
                   ),
                   const SizedBox(height: 16),
 
+                  // 1. Dual Reviewer Persona: General vs Disabled
+                  const Text(
+                    'Reviewer Category:',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('General Visitor 🧑‍🎓')),
+                          selected: userCategory == 'general',
+                          selectedColor: const Color(0xFF0F766E),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: userCategory == 'general' ? Colors.white : const Color(0xFF94A3B8),
+                          ),
+                          onSelected: (val) {
+                            if (val) setSheetState(() => userCategory = 'general');
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Center(child: Text('Divyang / Special Needs ♿')),
+                          selected: userCategory == 'disabled',
+                          selectedColor: const Color(0xFF0F766E),
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: userCategory == 'disabled' ? Colors.white : const Color(0xFF94A3B8),
+                          ),
+                          onSelected: (val) {
+                            if (val) setSheetState(() => userCategory = 'disabled');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // If Disabled, pick specific disability type
+                  if (userCategory == 'disabled') ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Select Disability / Assistance Type:',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF00F0FF)),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1C2A4A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.3)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          dropdownColor: const Color(0xFF1C2A4A),
+                          value: disabilityType,
+                          isExpanded: true,
+                          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF00F0FF)),
+                          items: disabilityOptions.map((opt) {
+                            return DropdownMenuItem<String>(
+                              value: opt,
+                              child: Text(opt, style: const TextStyle(fontSize: 13, color: Colors.white)),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setSheetState(() => disabilityType = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
                   // Target Feature Selector (e.g. Lift, Washroom, Ramp)
                   const Text(
                     'What specific facility are you rating?',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)),
                   ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
+                      color: const Color(0xFF1C2A4A),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: const Color(0xFF334155)),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
+                        dropdownColor: const Color(0xFF1C2A4A),
                         value: selectedFeature,
                         isExpanded: true,
-                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF0F766E)),
+                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF00F0FF)),
                         items: availableFeatures.map((f) {
                           return DropdownMenuItem<String>(
                             value: f,
-                            child: Text(f, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            child: Text(f, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null) setSheetState(() => selectedFeature = val);
+                          if (val != null) {
+                            setSheetState(() {
+                              selectedFeature = val;
+                              // Auto-focus category if single facility picked
+                              if (val.contains('Ramp')) {
+                                for (int i = 0; i < 5; i++) {
+                                  facilityActive[i] = i == 0;
+                                }
+                              } else if (val.contains('Lift')) {
+                                for (int i = 0; i < 5; i++) {
+                                  facilityActive[i] = i == 1;
+                                }
+                              } else if (val.contains('Washroom')) {
+                                for (int i = 0; i < 5; i++) {
+                                  facilityActive[i] = i == 2;
+                                }
+                              } else if (val.contains('Seating')) {
+                                for (int i = 0; i < 5; i++) {
+                                  facilityActive[i] = i == 3;
+                                }
+                              } else if (val.contains('Tactile') || val.contains('Braille')) {
+                                for (int i = 0; i < 5; i++) {
+                                  facilityActive[i] = i == 4;
+                                }
+                              }
+                            });
+                          }
                         },
                       ),
                     ),
@@ -246,7 +422,7 @@ class _DetailPageState extends State<DetailPage> {
                     const SizedBox(height: 12),
                     const Text(
                       'Specific Floor (Optional):',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8)),
                     ),
                     const SizedBox(height: 6),
                     SingleChildScrollView(
@@ -261,7 +437,7 @@ class _DetailPageState extends State<DetailPage> {
                               selectedColor: const Color(0xFF0F766E),
                               labelStyle: TextStyle(
                                 fontSize: 11,
-                                color: selectedTargetFloor == null ? Colors.white : const Color(0xFF334155),
+                                color: selectedTargetFloor == null ? Colors.white : const Color(0xFF94A3B8),
                               ),
                               onSelected: (_) => setSheetState(() => selectedTargetFloor = null),
                             ),
@@ -277,7 +453,7 @@ class _DetailPageState extends State<DetailPage> {
                                 selectedColor: const Color(0xFF0F766E),
                                 labelStyle: TextStyle(
                                   fontSize: 11,
-                                  color: isSel ? Colors.white : const Color(0xFF334155),
+                                  color: isSel ? Colors.white : const Color(0xFF94A3B8),
                                 ),
                                 onSelected: (_) => setSheetState(() => selectedTargetFloor = i),
                               ),
@@ -289,20 +465,62 @@ class _DetailPageState extends State<DetailPage> {
                   ],
 
                   const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Rate Facilities (Optional to Pick):',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setSheetState(() {
+                            final allOn = facilityActive.every((e) => e);
+                            for (int i = 0; i < 5; i++) {
+                              facilityActive[i] = !allOn;
+                            }
+                          });
+                        },
+                        child: Text(
+                          facilityActive.every((e) => e) ? 'Deselect All' : 'Select All',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF00F0FF)),
+                        ),
+                      ),
+                    ],
+                  ),
                   const Text(
-                    'Rate 5 Accessibility Dimensions (1 - 5 stars):',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                    'Unchecked facilities will be skipped and will not affect that facility\'s score.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                   const SizedBox(height: 8),
 
+                  // 5 Categories with Individual Checkbox / Toggle
                   ...List.generate(5, (idx) {
                     final cat = kCategories[idx];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                    final isChecked = facilityActive[idx];
+
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isChecked ? const Color(0xFF1C2A4A) : const Color(0xFF141E33),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isChecked ? const Color(0xFF00F0FF).withValues(alpha: 0.3) : const Color(0xFF1E293B),
+                        ),
+                      ),
                       child: Row(
                         children: [
+                          Checkbox(
+                            value: isChecked,
+                            activeColor: const Color(0xFF00F0FF),
+                            checkColor: const Color(0xFF0B132B),
+                            onChanged: (val) {
+                              setSheetState(() => facilityActive[idx] = val ?? false);
+                            },
+                          ),
                           SizedBox(
-                            width: 140,
+                            width: 110,
                             child: Row(
                               children: [
                                 Text(cat.$1, style: const TextStyle(fontSize: 16)),
@@ -310,31 +528,48 @@ class _DetailPageState extends State<DetailPage> {
                                 Expanded(
                                   child: Text(
                                     cat.$2,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isChecked ? Colors.white : const Color(0xFF64748B),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          Expanded(
-                            child: Slider(
-                              value: scores[idx].toDouble(),
-                              min: 1,
-                              max: 5,
-                              divisions: 4,
-                              activeColor: const Color(0xFF0F766E),
-                              onChanged: (val) {
-                                setSheetState(() => scores[idx] = val.toInt());
-                              },
+                          if (isChecked) ...[
+                            Expanded(
+                              child: Slider(
+                                value: scores[idx].toDouble(),
+                                min: 1,
+                                max: 5,
+                                divisions: 4,
+                                activeColor: const Color(0xFF00F0FF),
+                                inactiveColor: const Color(0xFF334155),
+                                onChanged: (val) {
+                                  setSheetState(() => scores[idx] = val.toInt());
+                                },
+                              ),
                             ),
-                          ),
-                          SizedBox(
-                            width: 32,
-                            child: Text(
-                              '${scores[idx]} ⭐',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            SizedBox(
+                              width: 32,
+                              child: Text(
+                                '${scores[idx]} ⭐',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF00F0FF)),
+                              ),
                             ),
-                          ),
+                          ] else ...[
+                            const Expanded(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  'Skipped',
+                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     );
@@ -344,10 +579,22 @@ class _DetailPageState extends State<DetailPage> {
                   TextField(
                     controller: commentCtrl,
                     maxLines: 2,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
-                      labelText: 'Experience & Campus Details',
+                      labelText: 'Experience & Details',
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
                       hintText: 'e.g. Lift functioning smooth, washroom clean with sturdy grab bars...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                      filled: true,
+                      fillColor: const Color(0xFF1C2A4A),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
                       contentPadding: const EdgeInsets.all(12),
                     ),
                   ),
@@ -357,20 +604,15 @@ class _DetailPageState extends State<DetailPage> {
                     children: [
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF00F0FF)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-                        label: Text(photoPath == null ? 'Attach Photo Proof' : 'Change Photo'),
-                        onPressed: () async {
-                          final picker = ImagePicker();
-                          final img = await picker.pickImage(
-                            source: ImageSource.gallery,
-                            imageQuality: 70,
-                          );
-                          if (img != null) {
-                            setSheetState(() => photoPath = img.path);
-                          }
-                        },
+                        icon: const Icon(Icons.add_a_photo_outlined, size: 18, color: Color(0xFF00F0FF)),
+                        label: Text(
+                          photoPath == null ? 'Attach Photo (Camera / Gallery)' : 'Change Photo',
+                          style: const TextStyle(color: Color(0xFF00F0FF)),
+                        ),
+                        onPressed: showPhotoSourceDialog,
                       ),
                       if (photoPath != null) ...[
                         const SizedBox(width: 8),
@@ -410,15 +652,20 @@ class _DetailPageState extends State<DetailPage> {
                           return;
                         }
 
+                        // Create nullable scores list
+                        final finalScores = List<int?>.generate(5, (i) => facilityActive[i] ? scores[i] : null);
+
                         final user = store.currentUser!;
                         final newReview = Review(
-                          scores: scores,
+                          scores: finalScores,
                           comment: commentCtrl.text.trim(),
                           user: user.name,
-                          userRole: user.isAdmin ? 'Admin' : user.needsPreference,
+                          userRole: user.isAdmin ? 'Admin' : (userCategory == 'disabled' ? disabilityType : user.needsPreference),
                           photoPath: photoPath,
                           targetTag: selectedFeature,
                           targetFloor: selectedTargetFloor,
+                          userCategory: userCategory,
+                          disabilityType: userCategory == 'disabled' ? disabilityType : null,
                         );
 
                         store.addReview(p, newReview);
@@ -1046,275 +1293,383 @@ class _DetailPageState extends State<DetailPage> {
             ),
             const SizedBox(height: 10),
 
-            if (p.reviews.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Center(
-                  child: Column(
-                    children: [
-                      const Icon(Icons.rate_review_outlined, size: 40, color: Color(0xFF94A3B8)),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'No reviews yet for this venue',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Be the first visitor to evaluate and help others!',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton.tonal(
-                        onPressed: () => _openFeedbackSheet(p),
-                        child: const Text('Add First Review'),
-                      ),
-                    ],
+            // Review Filter Tabs: All, Divyang/Special Needs, General
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ChoiceChip(
+                    label: Text('All (${p.reviews.length})'),
+                    selected: _reviewFilter == 'all',
+                    selectedColor: const Color(0xFF0F766E),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _reviewFilter == 'all' ? Colors.white : const Color(0xFF475569),
+                    ),
+                    onSelected: (val) {
+                      if (val) setState(() => _reviewFilter = 'all');
+                    },
                   ),
-                ),
-              )
-            else
-              ...p.reviews.reversed.map((r) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('♿ Divyang Reviews '),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: _reviewFilter == 'disabled' ? Colors.white24 : const Color(0xFFCCFBF1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${p.specialReviews.length}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: _reviewFilter == 'disabled' ? Colors.white : const Color(0xFF0F766E),
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                    selected: _reviewFilter == 'disabled',
+                    selectedColor: const Color(0xFF0F766E),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _reviewFilter == 'disabled' ? Colors.white : const Color(0xFF475569),
+                    ),
+                    onSelected: (val) {
+                      if (val) setState(() => _reviewFilter = 'disabled');
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text('🧑‍🎓 General (${p.generalReviews.length})'),
+                    selected: _reviewFilter == 'general',
+                    selectedColor: const Color(0xFF0F766E),
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _reviewFilter == 'general' ? Colors.white : const Color(0xFF475569),
+                    ),
+                    onSelected: (val) {
+                      if (val) setState(() => _reviewFilter = 'general');
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            () {
+              final filteredReviews = _reviewFilter == 'all'
+                  ? p.reviews
+                  : (_reviewFilter == 'disabled' ? p.specialReviews : p.generalReviews);
+
+              if (filteredReviews.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: const Color(0xFFCCFBF1),
-                              child: Text(
-                                r.user.isNotEmpty ? r.user[0].toUpperCase() : 'U',
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        r.user,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                      ),
-                                      if (r.userRole != null) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: r.userRole == 'Admin' ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            r.userRole!,
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: r.userRole == 'Admin' ? const Color(0xFFDC2626) : const Color(0xFF475569),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  Text(
-                                    '${r.time.day}/${r.time.month}/${r.time.year}',
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Avg ${(r.scores.reduce((a, b) => a + b) / 5.0).toStringAsFixed(1)} ⭐',
-                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Target facility tag or floor badge
-                        if (r.targetTag != null || r.targetFloor != null) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              if (r.targetTag != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEFF6FF),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                                  ),
-                                  child: Text(
-                                    r.targetTag!,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1D4ED8),
-                                    ),
-                                  ),
-                                ),
-                              if (r.targetFloor != null) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF0FDF4),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFBBF7D0)),
-                                  ),
-                                  child: Text(
-                                    r.targetFloor == 0 ? 'Ground Floor' : 'Floor ${r.targetFloor}',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF15803D),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
+                        const Icon(Icons.rate_review_outlined, size: 40, color: Color(0xFF94A3B8)),
                         const SizedBox(height: 10),
                         Text(
-                          r.comment,
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+                          _reviewFilter == 'disabled'
+                              ? 'No Divyang reviews yet for this venue'
+                              : 'No reviews yet in this category',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 6,
-                          children: List.generate(5, (idx) {
-                            final score = r.scores[idx];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                              ),
-                              child: Text(
-                                '${kCategories[idx].$1} $score',
-                                style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
-                              ),
-                            );
-                          }),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Be the first visitor to evaluate and help others!',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
-                        if (r.photoPath != null) ...[
-                          const SizedBox(height: 12),
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (_) => Dialog(
-                                  backgroundColor: Colors.transparent,
-                                  insetPadding: const EdgeInsets.all(16),
-                                  child: Stack(
-                                    alignment: Alignment.topRight,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: _photo(r.photoPath!, h: 400),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
-                                        onPressed: () => Navigator.pop(context),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Stack(
-                              alignment: Alignment.bottomRight,
-                              children: [
-                                _photo(r.photoPath!, h: 180),
-                                Container(
-                                  margin: const EdgeInsets.all(8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
-                                      SizedBox(width: 4),
-                                      Text('Tap to expand', style: TextStyle(color: Colors.white, fontSize: 10)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                        const SizedBox(height: 12),
+                        FilledButton.tonal(
+                          onPressed: () => _openFeedbackSheet(p),
+                          child: const Text('Add Review ✍️'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return Column(
+                children: filteredReviews.reversed.map((r) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: r.isSpecialNeeds ? const Color(0xFF14B8A6).withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
+                          width: r.isSpecialNeeds ? 1.5 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
-                        const SizedBox(height: 10),
-                        // Community verified helpfulness footer
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.verified_user_outlined, size: 14, color: Color(0xFF10B981)),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Campus Verified Review',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: r.isSpecialNeeds ? const Color(0xFFCCFBF1) : const Color(0xFFF1F5F9),
+                                child: Text(
+                                  r.isSpecialNeeds ? '♿' : (r.user.isNotEmpty ? r.user[0].toUpperCase() : 'U'),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
                                 ),
-                              ],
-                            ),
-                            InkWell(
-                              onTap: () => store.upvoteReview(p, r),
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.thumb_up_alt_outlined, size: 13, color: Color(0xFF475569)),
-                                    const SizedBox(width: 4),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          r.user,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                        ),
+                                        if (r.isSpecialNeeds) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFCCFBF1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              r.disabilityType ?? 'Special Needs',
+                                              style: const TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF0F766E),
+                                              ),
+                                            ),
+                                          ),
+                                        ] else if (r.userRole != null) ...[
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: r.userRole == 'Admin' ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              r.userRole!,
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: r.userRole == 'Admin' ? const Color(0xFFDC2626) : const Color(0xFF475569),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                     Text(
-                                      'Helpful (${r.upvotes})',
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                      '${r.time.day}/${r.time.month}/${r.time.year}',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                     ),
                                   ],
                                 ),
                               ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  r.validAvg > 0 ? 'Avg ${r.validAvg.toStringAsFixed(1)} ⭐' : 'Feedback',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Target facility tag or floor badge
+                          if (r.targetTag != null || r.targetFloor != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                if (r.targetTag != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                                    ),
+                                    child: Text(
+                                      r.targetTag!,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF1D4ED8),
+                                      ),
+                                    ),
+                                  ),
+                                if (r.targetFloor != null) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0FDF4),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                                    ),
+                                    child: Text(
+                                      r.targetFloor == 0 ? 'Ground Floor' : 'Floor ${r.targetFloor}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
-                        ),
-                      ],
-                    ),
-                  )),
+                          const SizedBox(height: 10),
+                          Text(
+                            r.comment,
+                            style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: List.generate(5, (idx) {
+                              final score = idx < r.scores.length ? r.scores[idx] : null;
+                              if (score == null) return const SizedBox.shrink();
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Text(
+                                  '${kCategories[idx].$1} $score ⭐',
+                                  style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                                ),
+                              );
+                            }),
+                          ),
+                          if (r.photoPath != null) ...[
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: const EdgeInsets.all(16),
+                                    child: Stack(
+                                      alignment: Alignment.topRight,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: _photo(r.photoPath!, h: 400),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.close_rounded, color: Colors.white, size: 28),
+                                          onPressed: () => Navigator.pop(context),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Stack(
+                                alignment: Alignment.bottomRight,
+                                children: [
+                                  _photo(r.photoPath!, h: 180),
+                                  Container(
+                                    margin: const EdgeInsets.all(8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
+                                        SizedBox(width: 4),
+                                        Text('Tap to expand', style: TextStyle(color: Colors.white, fontSize: 10)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 10),
+                          // Community verified helpfulness footer
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    r.isSpecialNeeds ? Icons.accessibility_new_rounded : Icons.verified_user_outlined,
+                                    size: 14,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    r.isSpecialNeeds ? 'Special Needs Verified Review' : 'Campus Verified Review',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF10B981)),
+                                  ),
+                                ],
+                              ),
+                              InkWell(
+                                onTap: () => store.upvoteReview(p, r),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.thumb_up_alt_outlined, size: 13, color: Color(0xFF475569)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Helpful (${r.upvotes})',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+              );
+            }(),
           ],
         ),
       ),
