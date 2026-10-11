@@ -14,6 +14,7 @@ import 'pages/profile_page.dart';
 import 'pages/detail_page.dart';
 import 'pages/ai_chat_page.dart';
 import 'pages/auth_page.dart';
+import 'pages/admin_report_page.dart';
 
 final navKey = GlobalKey<NavigatorState>();
 
@@ -27,8 +28,11 @@ class AccessPathApp extends StatelessWidget {
   const AccessPathApp({super.key});
 
   @override
+  @override
   Widget build(BuildContext context) {
-    const primarySeed = Color(0xFF0F766E); // Deep Emerald Teal
+    const primaryCyan = Color(0xFF00F0FF); // Electric Cyan Accent
+    const bgDark = Color(0xFF0B132B); // Deep Space Navy
+    const surfaceDark = Color(0xFF131F37); // Dark Slate Surface
 
     return MaterialApp(
       title: 'AccessPath — IIT (ISM) Dhanbad',
@@ -36,45 +40,47 @@ class AccessPathApp extends StatelessWidget {
       navigatorKey: navKey,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primarySeed,
-          brightness: Brightness.light,
-          primary: primarySeed,
-          surface: const Color(0xFFF8FAFC),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: bgDark,
+        colorScheme: const ColorScheme.dark(
+          primary: primaryCyan,
+          secondary: Color(0xFF10B981),
+          surface: surfaceDark,
+          onSurface: Colors.white,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF1F5F9),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,
           scrolledUnderElevation: 0,
-          backgroundColor: Colors.transparent,
+          backgroundColor: Color(0xFF0F172A),
           titleTextStyle: TextStyle(
-            color: Color(0xFF0F172A),
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
           ),
+          iconTheme: IconThemeData(color: Colors.white),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          color: Colors.white,
+          color: surfaceDark,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+            side: const BorderSide(color: Color(0xFF1E293B), width: 1),
           ),
           margin: EdgeInsets.zero,
         ),
         navigationBarTheme: NavigationBarThemeData(
           height: 68,
-          backgroundColor: Colors.white,
+          backgroundColor: const Color(0xFF0F172A),
           elevation: 8,
-          indicatorColor: const Color(0xFFCCFBF1),
+          indicatorColor: const Color(0xFF00F0FF).withValues(alpha: 0.2),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final isSelected = states.contains(WidgetState.selected);
             return TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+              color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF64748B),
             );
           }),
         ),
@@ -311,48 +317,37 @@ class _ShellState extends State<Shell> {
           return Scaffold(
             body: Row(
               children: [
-                // Modern Glassmorphic Web Sidebar
+                // Modern Cyberpunk Web Sidebar matching AI Assistant
                 Container(
-                  width: 260,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: const Border(
-                      right: BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                  width: 270,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F172A),
+                    border: Border(
+                      right: BorderSide(color: Color(0xFF1E293B), width: 1.2),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 10,
-                        offset: const Offset(4, 0),
-                      ),
-                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Sidebar Brand Header
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 28, 20, 24),
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                         child: Row(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(12),
                               child: Image.asset(
                                 'assets/logo/accesspath_logo.png',
-                                width: 44,
-                                height: 44,
+                                width: 42,
+                                height: 42,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
+                                    color: const Color(0xFF00F0FF).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.accessible_forward_rounded, color: Colors.white, size: 24),
+                                  child: const Icon(Icons.accessible_forward_rounded, color: Color(0xFF00F0FF), size: 24),
                                 ),
                               ),
                             ),
@@ -363,10 +358,10 @@ class _ShellState extends State<Shell> {
                                 Text(
                                   'AccessPath',
                                   style: TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 19,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: -0.5,
-                                    color: Color(0xFF0F172A),
+                                    color: Colors.white,
                                   ),
                                 ),
                                 Text(
@@ -374,7 +369,7 @@ class _ShellState extends State<Shell> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
+                                    color: Color(0xFF00F0FF),
                                   ),
                                 ),
                               ],
@@ -382,19 +377,48 @@ class _ShellState extends State<Shell> {
                           ],
                         ),
                       ),
-                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      const Divider(height: 1, color: Color(0xFF1E293B)),
                       const SizedBox(height: 16),
 
-                      // Navigation Items (React / Tailwind Style)
+                      // Navigation Items
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Column(
                           children: [
                             _webNavTile(0, Icons.explore_outlined, Icons.explore_rounded, 'Explore Places'),
                             _webNavTile(1, Icons.map_outlined, Icons.map_rounded, 'Campus Map'),
                             _webNavTile(2, Icons.add_location_alt_outlined, Icons.add_location_alt_rounded, 'Contribute Venue'),
-                            _webNavTile(3, Icons.auto_awesome_outlined, Icons.auto_awesome, 'AI Campus Assistant 🤖'),
-                            _webNavTile(4, Icons.person_outline_rounded, Icons.person_rounded, 'My Profile & Admin'),
+                            _webNavTile(3, Icons.auto_awesome_outlined, Icons.auto_awesome, 'AI Assistant 🤖'),
+                            _webNavTile(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profile & XP 🏆'),
+                            const SizedBox(height: 8),
+                            // Admin Audit Portal Direct Button in Sidebar
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const AdminReportPage()),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.3)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.assessment_rounded, size: 20, color: Color(0xFF00F0FF)),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Audit Reports & Admin',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -404,15 +428,11 @@ class _ShellState extends State<Shell> {
                       // Campus Quick Info in Sidebar Footer
                       Container(
                         margin: const EdgeInsets.all(16),
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFF0FDFA), Color(0xFFCCFBF1)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: const Color(0xFF99F6E4)),
+                          color: const Color(0xFF131F37),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF1E293B)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,15 +449,15 @@ class _ShellState extends State<Shell> {
                                 ),
                                 const SizedBox(width: 6),
                                 const Text(
-                                  'Live Campus Sync',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F766E)),
+                                  'Live Campus Telemetry',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 6),
                             const Text(
-                              'Herak Hostel: 5 Floors, 2 Working Lifts, 10 Washrooms per floor verified.',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF334155), height: 1.35),
+                              'Herakles Hostel: 5 Floors, 2 Lifts, 10 Washrooms verified.',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.35),
                             ),
                           ],
                         ),
@@ -446,10 +466,10 @@ class _ShellState extends State<Shell> {
                   ),
                 ),
 
-                // Main Content Area (Max width centered for clean desktop aesthetics)
+                // Main Content Area
                 Expanded(
                   child: Container(
-                    color: const Color(0xFFF8FAFC),
+                    color: const Color(0xFF0B132B),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 1200),
@@ -467,42 +487,39 @@ class _ShellState extends State<Shell> {
         return Scaffold(
           body: IndexedStack(index: tab, children: pages),
           bottomNavigationBar: Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, -4),
-                ),
-              ],
+            decoration: const BoxDecoration(
+              color: Color(0xFF0F172A),
+              border: Border(top: BorderSide(color: Color(0xFF1E293B))),
             ),
             child: NavigationBar(
               selectedIndex: tab,
               onDestinationSelected: (i) => setState(() => tab = i),
+              backgroundColor: const Color(0xFF0F172A),
+              indicatorColor: const Color(0xFF00F0FF).withValues(alpha: 0.2),
               destinations: const [
                 NavigationDestination(
-                  icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore_rounded, color: Color(0xFF0F766E)),
+                  icon: Icon(Icons.explore_outlined, color: Color(0xFF64748B)),
+                  selectedIcon: Icon(Icons.explore_rounded, color: Color(0xFF00F0FF)),
                   label: 'Explore',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.map_outlined),
-                  selectedIcon: Icon(Icons.map_rounded, color: Color(0xFF0F766E)),
+                  icon: Icon(Icons.map_outlined, color: Color(0xFF64748B)),
+                  selectedIcon: Icon(Icons.map_rounded, color: Color(0xFF00F0FF)),
                   label: 'Map',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.add_location_alt_outlined),
-                  selectedIcon: Icon(Icons.add_location_alt_rounded, color: Color(0xFF0F766E)),
+                  icon: Icon(Icons.add_location_alt_outlined, color: Color(0xFF64748B)),
+                  selectedIcon: Icon(Icons.add_location_alt_rounded, color: Color(0xFF00F0FF)),
                   label: 'Add Place',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.auto_awesome_outlined),
-                  selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFF0F766E)),
+                  icon: Icon(Icons.auto_awesome_outlined, color: Color(0xFF64748B)),
+                  selectedIcon: Icon(Icons.auto_awesome, color: Color(0xFF00F0FF)),
                   label: 'AI Helper',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.person_outline_rounded),
-                  selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF0F766E)),
+                  icon: Icon(Icons.person_outline_rounded, color: Color(0xFF64748B)),
+                  selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF00F0FF)),
                   label: 'Profile',
                 ),
               ],
@@ -526,15 +543,16 @@ class _ShellState extends State<Shell> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFCCFBF1) : Colors.transparent,
+              color: isSelected ? const Color(0xFF00F0FF).withValues(alpha: 0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(14),
+              border: isSelected ? Border.all(color: const Color(0xFF00F0FF), width: 1.2) : null,
             ),
             child: Row(
               children: [
                 Icon(
                   isSelected ? selectedIcon : unselectedIcon,
                   size: 20,
-                  color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                  color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF64748B),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -542,7 +560,7 @@ class _ShellState extends State<Shell> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    color: isSelected ? const Color(0xFF0F766E) : const Color(0xFF334155),
+                    color: isSelected ? const Color(0xFF00F0FF) : const Color(0xFF94A3B8),
                   ),
                 ),
               ],

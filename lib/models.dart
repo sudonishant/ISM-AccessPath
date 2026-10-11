@@ -155,6 +155,23 @@ class Review {
     return nonNullScores.reduce((a, b) => a + b) / nonNullScores.length;
   }
 
+  double get overallScore => validAvg;
+  DateTime get date => time;
+
+  int? get stepFree => scores.isNotEmpty ? scores[0] : null;
+  int? get lift => scores.length > 1 ? scores[1] : null;
+  int? get washroom => scores.length > 2 ? scores[2] : null;
+  int? get seating => scores.length > 3 ? scores[3] : null;
+  int? get wayfinding => scores.length > 4 ? scores[4] : null;
+
+  String get timeAgo {
+    final diff = DateTime.now().difference(time);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
+
   Map<String, dynamic> toJson() => {
         's': scores,
         'c': comment,
