@@ -61,19 +61,31 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
+    def _get_path(self):
+        forwarded = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path")
+        target = forwarded if forwarded else self.path
+        clean = target.split("?")[0].rstrip("/")
+        return clean if clean else "/"
+
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
-        # Health check
-        if self.path in ["/", "/api", "/api/", "/api/health"]:
+        req_path = self._get_path()
+
+        # Health check & root info
+        if req_path in ["/", "/api", "/api/health", "/health", "/api/index.py"]:
             self._send_json_response(200, {
                 "status": "healthy",
                 "campus": "IIT (ISM) Dhanbad",
                 "platform": "Vercel Serverless Python",
-                "service": "AccessPath Backend Engine v2.0"
+                "service": "AccessPath Backend Engine v2.0",
+                "detected_path": req_path
             })
             return
 
         # Places & Reviews sync
-        if self.path in ["/api/places", "/places"]:
+        if req_path in ["/api/places", "/places"]:
             places = load_data(DATA_FILE, "places")
             self._send_json_response(200, {
                 "status": "success",
@@ -83,7 +95,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Users list
-        if self.path in ["/api/users", "/users"]:
+        if req_path in ["/api/users", "/users"]:
             users = load_data(USERS_FILE, "users")
             self._send_json_response(200, {
                 "status": "success",
@@ -92,11 +104,19 @@ class handler(BaseHTTPRequestHandler):
             })
             return
 
-        self._send_json_response(404, {"error": "Endpoint not found"})
+        self._send_json_response(404, {
+            "error": "Endpoint not found",
+            "path": req_path,
+            "raw_path": self.path,
+            "x-forwarded-uri": self.headers.get("x-forwarded-uri"),
+            "x-matched-path": self.headers.get("x-matched-path")
+        })
 
     def do_POST(self):
+        req_path = self._get_path()
+
         # Places full sync
-        if self.path in ["/api/places/sync", "/places/sync"]:
+        if req_path in ["/api/places/sync", "/places/sync"]:
             payload = self._read_json_body()
             incoming = payload.get("places", [])
             existing = load_data(DATA_FILE, "places")
@@ -132,7 +152,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Single Review Submit
-        if self.path in ["/api/reviews", "/reviews"]:
+        if req_path in ["/api/reviews", "/reviews"]:
             payload = self._read_json_body()
             place_id = payload.get("placeId")
             review = payload.get("review")
@@ -157,7 +177,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Add new venue / place
-        if self.path in ["/api/places", "/places"]:
+        if req_path in ["/api/places", "/places"]:
             new_place = self._read_json_body()
             places = load_data(DATA_FILE, "places")
             places.append(new_place)
@@ -166,7 +186,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Admin: Update lift status
-        if self.path in ["/api/admin/lift", "/admin/lift"]:
+        if req_path in ["/api/admin/lift", "/admin/lift"]:
             payload = self._read_json_body()
             place_id = payload.get("placeId")
             is_operational = payload.get("isLiftOperational", True)
@@ -181,7 +201,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Admin: Update notice
-        if self.path in ["/api/admin/notice", "/admin/notice"]:
+        if req_path in ["/api/admin/notice", "/admin/notice"]:
             payload = self._read_json_body()
             place_id = payload.get("placeId")
             notice = payload.get("adminNotice")
@@ -196,7 +216,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # User Registration
-        if self.path in ["/api/users", "/users"]:
+        if req_path in ["/api/users", "/users"]:
             user = self._read_json_body()
             users = load_data(USERS_FILE, "users")
             users = [u for u in users if u.get("id") != user.get("id")]
@@ -205,4 +225,10 @@ class handler(BaseHTTPRequestHandler):
             self._send_json_response(200, {"status": "user_saved", "user": user})
             return
 
-        self._send_json_response(404, {"error": "Endpoint not found"})
+        self._send_json_response(404, {
+            "error": "Endpoint not found",
+            "path": req_path,
+            "raw_path": self.path,
+            "x-forwarded-uri": self.headers.get("x-forwarded-uri"),
+            "x-matched-path": self.headers.get("x-matched-path")
+        })

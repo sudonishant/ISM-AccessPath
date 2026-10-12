@@ -30,20 +30,13 @@ class AppStore extends ChangeNotifier {
   bool isFirstTimeUser = false;
   String? customBackendUrl;
 
-  // Auto-detect server URL depending on platform or custom Vercel deployment
+  // Auto-detect server URL: defaults to production Vercel cloud server
   String get serverBaseUrl {
     if (customBackendUrl != null && customBackendUrl!.trim().isNotEmpty) {
       return customBackendUrl!.trim();
     }
-    if (kIsWeb) return 'http://127.0.0.1:8080';
-    try {
-      if (Platform.isAndroid) {
-        // Android Emulator uses 10.0.2.2 to reach host machine localhost
-        return 'http://10.0.2.2:8080';
-      }
-    } catch (_) {}
-    // LAN / Desktop / Default
-    return 'http://127.0.0.1:8080';
+    // Production Cloud Server deployed on Vercel
+    return 'https://ism-access-path.vercel.app';
   }
 
   // Dwell detection internals
