@@ -931,11 +931,14 @@ class _DetailPageState extends State<DetailPage> {
                       children: [
                         const Icon(Icons.layers_rounded, color: Color(0xFF0F766E), size: 20),
                         const SizedBox(width: 8),
-                        const Text(
-                          'Floor-by-Floor Architecture',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        const Expanded(
+                          child: Text(
+                            'Floor-by-Floor Architecture',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(

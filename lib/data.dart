@@ -853,4 +853,92 @@ List<Place> seedPlaces() => [
           Review(scores: [5, 4, 4, 5, 5], user: 'Manish', userCategory: 'general', comment: 'Completely open step-free plaza, easy spot to hang out between classes.'),
         ],
       ),
+
+      // ------------------------------------------------------------
+      // ⚡ 24. NLHC RAPID MOBILITY CHARGING STATION
+      // ------------------------------------------------------------
+      Place(
+        id: 'charging_nlhc',
+        name: 'NLHC Rapid Mobility Charging Station',
+        type: 'Charging',
+        lat: 23.8143,
+        lng: 86.4409,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Solar Charging Canopy',
+            totalWashrooms: 2,
+            accessibleWashrooms: 2,
+            liftsCount: 0,
+            hasRamp: true,
+            facilities: [
+              '⚡ Fast Charging: 4 Fast DC & 220V AC Docks for motorized wheelchairs & campus e-mobility',
+              '🛗 Step-Free: Direct 1:12 slope ramp with stainless guide rails',
+              '☂️ Canopy: Solar-powered sheltered dock with 24x7 LED illumination',
+              '🚻 Restrooms: 20m from NLHC Ground Floor Divyang Restroom',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 5], user: 'Dr. Verma', userCategory: 'disabled', comment: 'Excellent 220V rapid charging dock, charged my motorized wheelchair in 30 minutes!'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // ⚡ 25. CENTRAL LIBRARY ASSISTIVE POWER DOCK
+      // ------------------------------------------------------------
+      Place(
+        id: 'charging_library',
+        name: 'Central Library Assistive Charging Bay',
+        type: 'Charging',
+        lat: 23.8156,
+        lng: 86.4414,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Assistive Tech Foyer',
+            totalWashrooms: 2,
+            accessibleWashrooms: 2,
+            liftsCount: 2,
+            hasRamp: true,
+            facilities: [
+              '⚡ Assistive Dock: 4 Wheelchair charging docks with surge protection & battery health telemetry',
+              '🛗 Step-Free: Level tactile access directly inside the Air-Conditioned Foyer',
+              '📶 Live Telemetry: Smart availability sensor connected to AccessPath cockpit HUD',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 5, 5, 4, 5], user: 'Ananya', userCategory: 'disabled', comment: 'Very convenient charging spot right near the ground floor reading hall.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // ⚡ 26. HERAKLES QUADRANGLE EV POWER DOCK
+      // ------------------------------------------------------------
+      Place(
+        id: 'charging_herak',
+        name: 'Herakles Quadrangle EV Power Dock',
+        type: 'Charging',
+        lat: 23.8164,
+        lng: 86.4429,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Ground Quadrangle',
+            totalWashrooms: 2,
+            accessibleWashrooms: 2,
+            liftsCount: 2,
+            hasRamp: true,
+            facilities: [
+              '⚡ 24x7 Power Dock: 4 Weather-shielded high-current charging outlets',
+              '🛗 Step-Free: Seamless tactile pathway to Herakles elevator entrance',
+              '💺 Seating: Covered bench with emergency assistance button',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 4], user: 'Rohan', userCategory: 'disabled', comment: 'Always active and reliable charging station for hostel residents.'),
+        ],
+      ),
     ];

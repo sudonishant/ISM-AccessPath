@@ -24,6 +24,7 @@ const kPlaceTypes = [
   'Health',
   'Canteen',
   'Recreation',
+  'Charging',
 ];
 
 // ------------------------------------------------------------
@@ -289,6 +290,9 @@ class Place {
 
   bool get hasAccessibleWashroom =>
       totalAccessibleWashrooms > 0 || type.toLowerCase().contains('washroom');
+
+  bool get isChargingStation =>
+      type.toLowerCase().contains('charging') || name.toLowerCase().contains('charging');
 
   // ------------------------------------------------------------
   // 🤖 AI SUMMARY ENGINE

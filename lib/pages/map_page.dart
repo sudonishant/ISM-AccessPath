@@ -12,8 +12,17 @@ import '../widgets/glass_container.dart';
 import 'add_place_page.dart';
 import 'detail_page.dart';
 
+import '../widgets/ev_dashboard_widgets.dart';
+
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final Place? initialPlace;
+  final bool autoStartNav;
+
+  const MapPage({
+    super.key,
+    this.initialPlace,
+    this.autoStartNav = false,
+  });
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -25,12 +34,25 @@ class _MapPageState extends State<MapPage> {
   Place? _selectedPlace;
   String _activeFilter = 'All';
   final TextEditingController _searchCtrl = TextEditingController();
+  bool _isNavigating = false;
 
   // IIT (ISM) Dhanbad Campus Coordinates
   static const campusCenter = LatLng(23.8152, 86.4415);
   static const osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const satUrl =
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialPlace != null) {
+      _selectedPlace = widget.initialPlace;
+      _isNavigating = widget.autoStartNav;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _centerOn(LatLng(widget.initialPlace!.lat, widget.initialPlace!.lng));
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -62,6 +84,8 @@ class _MapPageState extends State<MapPage> {
 
           // Category filter matching
           switch (_activeFilter) {
+            case '⚡ Charging':
+              return p.isChargingStation;
             case '🚻 Washrooms':
               return p.type.toLowerCase() == 'washroom' || p.hasAccessibleWashroom;
             case '🛗 Lifts':
@@ -105,18 +129,64 @@ class _MapPageState extends State<MapPage> {
                     userAgentPackageName: 'com.example.accesspath',
                   ),
 
+                  // Reachability Circle (Electric Wheelchair & Mobility Range)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: store.myPos != null
+                            ? LatLng(store.myPos!.latitude, store.myPos!.longitude)
+                            : campusCenter,
+                        radius: 350,
+                        useRadiusInMeter: true,
+                        color: const Color(0x1800F0FF),
+                        borderColor: const Color(0x6600F0FF),
+                        borderStrokeWidth: 1.5,
+                      ),
+                    ],
+                  ),
+
+                  // Turn-by-Turn Glowing Polyline Layer when navigating
+                  if (_isNavigating && _selectedPlace != null)
+                    PolylineLayer(
+                      polylines: [
+                        // Outer neon cyan glow
+                        Polyline(
+                          points: [
+                            store.myPos != null
+                                ? LatLng(store.myPos!.latitude, store.myPos!.longitude)
+                                : campusCenter,
+                            LatLng(_selectedPlace!.lat, _selectedPlace!.lng),
+                          ],
+                          strokeWidth: 8.0,
+                          color: const Color(0x6600F0FF),
+                        ),
+                        // Core electric cyan route
+                        Polyline(
+                          points: [
+                            store.myPos != null
+                                ? LatLng(store.myPos!.latitude, store.myPos!.longitude)
+                                : campusCenter,
+                            LatLng(_selectedPlace!.lat, _selectedPlace!.lng),
+                          ],
+                          strokeWidth: 3.5,
+                          color: const Color(0xFF00F0FF),
+                        ),
+                      ],
+                    ),
+
                   // Markers Layer
                   MarkerLayer(
                     markers: [
                       ...visiblePlaces.map((p) {
                         final isSelected = _selectedPlace?.id == p.id;
+                        final isCharging = p.isChargingStation;
                         final isWashroom = p.type.toLowerCase() == 'washroom';
                         final isHostel = p.type.toLowerCase() == 'hostel';
 
                         return Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: isSelected ? 72 : 56,
-                          height: isSelected ? 72 : 56,
+                          width: isSelected ? 76 : (isCharging ? 64 : 56),
+                          height: isSelected ? 76 : (isCharging ? 64 : 56),
                           child: GestureDetector(
                             onTap: () {
                               setState(() => _selectedPlace = p);
@@ -125,7 +195,7 @@ class _MapPageState extends State<MapPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Pill badge showing type or score
+                                // Pill badge showing type, dock or score
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
@@ -134,42 +204,54 @@ class _MapPageState extends State<MapPage> {
                                     border: Border.all(
                                       color: isSelected
                                           ? const Color(0xFFFF6B2B)
-                                          : (isWashroom
-                                              ? const Color(0xFF38BDF8)
-                                              : (isHostel ? const Color(0xFF10B981) : const Color(0xFF64748B))),
+                                          : (isCharging
+                                              ? const Color(0xFF00F0FF)
+                                              : (isWashroom
+                                                  ? const Color(0xFF38BDF8)
+                                                  : (isHostel ? const Color(0xFF10B981) : const Color(0xFF64748B)))),
                                       width: isSelected ? 2.0 : 1.2,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.25),
-                                        blurRadius: 6,
+                                        color: isCharging
+                                            ? const Color(0xFF00F0FF).withValues(alpha: 0.4)
+                                            : Colors.black.withValues(alpha: 0.25),
+                                        blurRadius: isCharging ? 8 : 6,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: Text(
-                                    isWashroom
-                                        ? '🚻 ${p.totalAccessibleWashrooms} Acc'
-                                        : (p.reviews.isEmpty ? 'NEW' : '${p.score}'),
+                                    isCharging
+                                        ? '⚡ DOCK'
+                                        : (isWashroom
+                                            ? '🚻 ${p.totalAccessibleWashrooms} Acc'
+                                            : (p.reviews.isEmpty ? 'NEW' : '${p.score}')),
                                     style: TextStyle(
                                       fontSize: 8,
                                       fontWeight: FontWeight.w800,
                                       color: isSelected
                                           ? const Color(0xFFFF6B2B)
-                                          : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                          : (isCharging
+                                              ? const Color(0xFF00F0FF)
+                                              : (isDark ? Colors.white : const Color(0xFF0F172A))),
                                     ),
                                   ),
                                 ),
                                 Icon(
-                                  isWashroom
-                                      ? Icons.wc_rounded
-                                      : (isHostel ? Icons.domain_rounded : Icons.location_on_rounded),
+                                  isCharging
+                                      ? Icons.ev_station_rounded
+                                      : (isWashroom
+                                          ? Icons.wc_rounded
+                                          : (isHostel ? Icons.domain_rounded : Icons.location_on_rounded)),
                                   color: isSelected
                                       ? const Color(0xFFFF6B2B)
-                                      : (isWashroom
-                                          ? const Color(0xFF0284C7)
-                                          : (isHostel ? const Color(0xFF10B981) : const Color(0xFF0F766E))),
-                                  size: isSelected ? 38 : 30,
+                                      : (isCharging
+                                          ? const Color(0xFF00F0FF)
+                                          : (isWashroom
+                                              ? const Color(0xFF0284C7)
+                                              : (isHostel ? const Color(0xFF10B981) : const Color(0xFF0F766E)))),
+                                  size: isSelected ? 40 : (isCharging ? 34 : 30),
                                 ),
                               ],
                             ),
@@ -276,6 +358,7 @@ class _MapPageState extends State<MapPage> {
                         child: Row(
                           children: [
                             'All',
+                            '⚡ Charging',
                             '🚻 Washrooms',
                             '🛗 Lifts',
                             '♿ Ramps',
@@ -566,23 +649,57 @@ class _MapPageState extends State<MapPage> {
                         ],
 
                         const SizedBox(height: 12),
-                        // Action Button to Detail Page
-                        SizedBox(
-                          width: double.infinity,
-                          child: GlassPillButton(
-                            text: 'View Floor Breakdown & Reviews ↗',
-                            icon: Icons.layers_rounded,
-                            color: const Color(0xFFFF6B2B),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailPage(_selectedPlace!),
+                        // Action Buttons: Engage EV HUD + Detail Page
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GlassPillButton(
+                                text: '⚡ Navigate HUD',
+                                icon: Icons.navigation_rounded,
+                                color: const Color(0xFF00F0FF),
+                                onPressed: () {
+                                  setState(() => _isNavigating = true);
+                                },
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GlassPillButton(
+                                text: 'Floor Intel ↗',
+                                icon: Icons.layers_rounded,
+                                color: const Color(0xFFFF6B2B),
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => DetailPage(_selectedPlace!),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                ),
+
+              // ---- EV Turn-by-Turn Route Guidance HUD Overlay ----
+              if (_isNavigating && _selectedPlace != null)
+                Positioned(
+                  bottom: 16,
+                  left: 14,
+                  right: 14,
+                  child: EvRouteGuidanceHud(
+                    destinationName: _selectedPlace!.name,
+                    distanceMeters: (store.distanceTo(_selectedPlace!) ?? 320).toDouble(),
+                    etaMinutes: '${((store.distanceTo(_selectedPlace!) ?? 320) / 75).ceil().clamp(1, 15)} min',
+                    nextManeuver: _selectedPlace!.isChargingStation
+                        ? 'Dock at rapid charging bay • 220V Ground portico'
+                        : (_selectedPlace!.hasRamp
+                            ? 'Proceed via 1:12 step-free ramp entrance'
+                            : 'Follow paved corridor to elevator foyer'),
+                    batteryCostPercent: (((store.distanceTo(_selectedPlace!) ?? 320) / 400).ceil()).clamp(1, 4),
+                    onCancel: () => setState(() => _isNavigating = false),
                   ),
                 ),
             ],

@@ -1,14 +1,18 @@
 // ============================================================
 // explore_page.dart — PAGE 1: Discovery, Search & Requirements Filter
+// EV Smart Mobility Cockpit & Telemetry HUD Redesign
 // ============================================================
 
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/ev_dashboard_widgets.dart';
 import 'detail_page.dart';
 import 'auth_page.dart';
 import 'ai_chat_page.dart';
+import 'map_page.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -21,6 +25,8 @@ class _ExplorePageState extends State<ExplorePage> {
   final Set<int> needs = {}; // Selected accessibility category filters
   String query = '';
   final TextEditingController _searchCtrl = TextEditingController();
+  String _driveMode = 'Step-Free Safe';
+  final double _batteryPercent = 88.0;
 
   @override
   void dispose() {
@@ -88,13 +94,17 @@ class _ExplorePageState extends State<ExplorePage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'AccessPath',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
-                                    color: brandTitleColor,
+                                Flexible(
+                                  child: Text(
+                                    'AccessPath',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.5,
+                                      color: brandTitleColor,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -253,92 +263,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                 ),
 
-                // ---- Google Stitch Style: Active Accessibility Mode Bar ----
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF00796B), Color(0xFF10B981)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.accessible_rounded, color: Colors.white, size: 16),
-                            SizedBox(width: 6),
-                            Text('Wheelchair Route • Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                            SizedBox(width: 4),
-                            Icon(Icons.check_circle, color: Colors.white, size: 13),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('🔊 Screen Reader & Audio Guide Beacon enabled')),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF131F37) : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.record_voice_over_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B), size: 15),
-                              const SizedBox(width: 5),
-                              Text('Audio Guide', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('🔇 Sensory Quiet Path & Low Noise Route selected')),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF131F37) : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.hearing_rounded, color: Color(0xFFF59E0B), size: 15),
-                              const SizedBox(width: 5),
-                              Text('Sensory Quiet', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // ---- Modern Tactile Search Field with Voice Search & Beacon Button ----
+                // ---- Search Field with Voice Search ----
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                   child: Container(
@@ -380,7 +305,7 @@ class _ExplorePageState extends State<ExplorePage> {
                               setState(() => query = '');
                             },
                           ),
-                        // Voice Search Button (Google Material Stitch Style)
+                        // Voice Search Button
                         GestureDetector(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -409,82 +334,9 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                 ),
 
-                // ---- Stitch UI: Live Operational Beacon Card (Herakles Hostel) ----
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isDark
-                            ? [const Color(0xFF0F2B26), const Color(0xFF132A38)]
-                            : [const Color(0xFFECFDF5), const Color(0xFFF0FDFA)],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(color: Color(0xFF10B981), blurRadius: 6, spreadRadius: 1),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Herakles Hostel Lifts',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text('Ground to 5th Floor • Active', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Verified today • Wide 42" door, Braille keypad & voice announce',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.elevator_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B), size: 24),
-                      ],
-                    ),
-                  ),
-                ),
-
                 // ---- Requirements Filter Section ----
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
                   child: Row(
                     children: [
                       Text(
@@ -579,35 +431,106 @@ class _ExplorePageState extends State<ExplorePage> {
                 ),
                 const SizedBox(height: 6),
 
-                // ---- Place List Header ----
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Places (${filteredList.length})',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        store.myPos != null ? 'Sorted by Distance' : 'Default Order',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // ---- Places List View ----
+                // ---- Scrollable EV Cockpit & Places Feed ----
                 Expanded(
-                  child: filteredList.isEmpty
-                      ? Center(
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    children: [
+                      // ---- 1. EV Cockpit Telemetry Dial ----
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: EvBatteryHudDial(
+                          batteryPercent: _batteryPercent,
+                          estimatedRangeKm: (_batteryPercent * 0.16),
+                          driveMode: _driveMode,
+                          onModeToggle: () {
+                            setState(() {
+                              if (_driveMode == 'Step-Free Safe') {
+                                _driveMode = 'Eco Cruise';
+                              } else if (_driveMode == 'Eco Cruise') {
+                                _driveMode = 'Boost Radar';
+                              } else {
+                                _driveMode = 'Step-Free Safe';
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ---- 2. EV Telemetry Metric Tiles Bar ----
+                      EvTelemetryMetricTilesBar(
+                        totalChargingPorts: 12,
+                        availableChargingPorts: 9,
+                        activeLifts: store.places.fold<int>(0, (acc, p) => acc + p.totalLifts),
+                        totalRestrooms: store.places.fold<int>(0, (acc, p) => acc + p.totalAccessibleWashrooms),
+                        onChargingTap: () {
+                          final bay = store.places.firstWhere(
+                            (p) => p.isChargingStation,
+                            orElse: () => store.places.first,
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MapPage(initialPlace: bay, autoStartNav: true),
+                            ),
+                          );
+                        },
+                        onLiftsTap: () => setState(() => query = 'lift'),
+                        onRestroomsTap: () => setState(() => query = 'washroom'),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ---- 3. EV Rapid Mobility Charging Bay Beacon Card ----
+                      EvChargingBeaconCard(
+                        stationName: 'NLHC Rapid Mobility Charging Station',
+                        location: 'New Lecture Hall Complex • Ground North Portico',
+                        totalPorts: 4,
+                        availablePorts: 3,
+                        powerRating: '220V Rapid AC & DC • Green Solar',
+                        onNavigate: () {
+                          final bay = store.places.firstWhere(
+                            (p) => p.id == 'charging_nlhc',
+                            orElse: () => store.places.firstWhere((p) => p.isChargingStation, orElse: () => store.places.first),
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MapPage(initialPlace: bay, autoStartNav: true),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 6),
+
+                      // ---- 6. Place List Header ----
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Places (${filteredList.length})',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            Text(
+                              store.myPos != null ? 'Sorted by Distance' : 'Default Order',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // ---- 7. Places Cards ----
+                      if (filteredList.isEmpty)
+                        Center(
                           child: Padding(
                             padding: const EdgeInsets.all(32.0),
                             child: Column(
@@ -626,12 +549,12 @@ class _ExplorePageState extends State<ExplorePage> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                const Text(
+                                Text(
                                   'No places match criteria',
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -661,38 +584,13 @@ class _ExplorePageState extends State<ExplorePage> {
                             ),
                           ),
                         )
-                      : LayoutBuilder(
-                          builder: (context, boxConstraints) {
-                            final isWide = boxConstraints.maxWidth > 700;
-
-                            if (isWide) {
-                              return GridView.builder(
-                                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: 1.35,
-                                ),
-                                itemCount: filteredList.length,
-                                itemBuilder: (context, i) {
-                                  final p = filteredList[i];
-                                  return _buildPlaceCard(context, p);
-                                },
-                              );
-                            }
-
-                            return ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
-                              itemCount: filteredList.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, i) {
-                                final p = filteredList[i];
-                                return _buildPlaceCard(context, p);
-                              },
-                            );
-                          },
-                        ),
+                      else
+                        ...filteredList.map((p) => Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 6, 20, 8),
+                              child: _buildPlaceCard(context, p),
+                            )),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -707,10 +605,22 @@ class _ExplorePageState extends State<ExplorePage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final nameColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final divColor = isDark ? Colors.white10 : const Color(0xFFE2E8F0);
+    final isCharging = p.isChargingStation;
+
+    // EV Battery Consumption Estimate (e.g. 0.1 kWh per 300m)
+    final distanceM = d ?? 350;
+    final kwhEstimate = (distanceM / 1000.0 * 0.18).toStringAsFixed(2);
+    final batteryPercentDraw = math.max(1, (distanceM / 350).round());
 
     return GlassContainer(
       borderRadius: 24,
       padding: const EdgeInsets.all(16),
+      borderColor: isCharging
+          ? const Color(0xFF00F0FF).withValues(alpha: 0.5)
+          : null,
+      surfaceColor: isCharging && isDark
+          ? const Color(0xFF091428)
+          : null,
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => DetailPage(p)),
@@ -718,7 +628,7 @@ class _ExplorePageState extends State<ExplorePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Title, Type badge, Community tag & Radial Score
+          // Top Row: Type Badge, Battery Draw Chip & Radial Score / Fast Dock Badge
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -731,20 +641,37 @@ class _ExplorePageState extends State<ExplorePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE0F2FE),
+                            color: isCharging
+                                ? const Color(0xFF00F0FF).withValues(alpha: 0.18)
+                                : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE0F2FE)),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isDark ? const Color(0xFF38BDF8).withValues(alpha: 0.3) : const Color(0xFF0284C7).withValues(alpha: 0.3),
+                              color: isCharging
+                                  ? const Color(0xFF00F0FF)
+                                  : (isDark
+                                      ? const Color(0xFF38BDF8).withValues(alpha: 0.3)
+                                      : const Color(0xFF0284C7).withValues(alpha: 0.3)),
                             ),
                           ),
-                          child: Text(
-                            p.type.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
-                              letterSpacing: 0.5,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isCharging) ...[
+                                const Icon(Icons.flash_on_rounded, size: 11, color: Color(0xFF00F0FF)),
+                                const SizedBox(width: 3),
+                              ],
+                              Text(
+                                isCharging ? 'EV CHARGING DOCK' : p.type.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: isCharging
+                                      ? const Color(0xFF00F0FF)
+                                      : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7)),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         if (p.isCustom) ...[
@@ -781,14 +708,14 @@ class _ExplorePageState extends State<ExplorePage> {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Icon(p.tierIcon, size: 13, color: p.color),
+                        Icon(p.tierIcon, size: 13, color: isCharging ? const Color(0xFF00F0FF) : p.color),
                         const SizedBox(width: 4),
                         Text(
-                          p.tierLabel,
+                          isCharging ? 'Rapid 220V Verified Bay' : p.tierLabel,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: p.color,
+                            color: isCharging ? const Color(0xFF00F0FF) : p.color,
                           ),
                         ),
                       ],
@@ -802,12 +729,15 @@ class _ExplorePageState extends State<ExplorePage> {
                 width: 54,
                 height: 54,
                 decoration: BoxDecoration(
-                  color: p.color.withValues(alpha: 0.15),
+                  color: (isCharging ? const Color(0xFF00F0FF) : p.color).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  border: Border.all(color: p.color.withValues(alpha: 0.6), width: 2),
+                  border: Border.all(
+                    color: (isCharging ? const Color(0xFF00F0FF) : p.color).withValues(alpha: 0.7),
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: p.color.withValues(alpha: 0.2),
+                      color: (isCharging ? const Color(0xFF00F0FF) : p.color).withValues(alpha: 0.25),
                       blurRadius: 8,
                     ),
                   ],
@@ -817,20 +747,31 @@ class _ExplorePageState extends State<ExplorePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        p.reviews.isEmpty ? 'NEW' : '${p.score}',
+                        isCharging
+                            ? '⚡ 4P'
+                            : (p.reviews.isEmpty ? 'NEW' : '${p.score}'),
                         style: TextStyle(
-                          fontSize: p.reviews.isEmpty ? 11 : 15,
+                          fontSize: isCharging ? 11 : (p.reviews.isEmpty ? 11 : 15),
                           fontWeight: FontWeight.w900,
-                          color: p.color,
+                          color: isCharging ? const Color(0xFF00F0FF) : p.color,
                         ),
                       ),
-                      if (p.reviews.isNotEmpty)
+                      if (!isCharging && p.reviews.isNotEmpty)
                         Text(
                           '/100',
                           style: TextStyle(
                             fontSize: 8,
                             fontWeight: FontWeight.w700,
                             color: p.color.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      if (isCharging)
+                        const Text(
+                          '220V',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF00F0FF),
                           ),
                         ),
                     ],
@@ -849,6 +790,27 @@ class _ExplorePageState extends State<ExplorePage> {
             spacing: 6,
             runSpacing: 6,
             children: [
+              // EV Battery Consumption Telemetry Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B2B).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFF6B2B).withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFFF6B2B)),
+                    const SizedBox(width: 3),
+                    Text(
+                      isCharging ? 'High Voltage Hub' : '-$kwhEstimate kWh (~$batteryPercentDraw%)',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFF6B2B)),
+                    ),
+                  ],
+                ),
+              ),
+
               // Washrooms summary
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -869,6 +831,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   ],
                 ),
               ),
+
               // Lifts summary
               if (p.hasLift)
                 Container(
@@ -890,23 +853,24 @@ class _ExplorePageState extends State<ExplorePage> {
                     ],
                   ),
                 ),
+
               // Ramp indicator
               if (p.hasRamp)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B2B).withValues(alpha: 0.12),
+                    color: const Color(0xFF00E599).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFF6B2B).withValues(alpha: 0.25)),
+                    border: Border.all(color: const Color(0xFF00E599).withValues(alpha: 0.3)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.accessible_rounded, size: 12, color: Color(0xFFFF6B2B)),
+                      Icon(Icons.accessible_rounded, size: 12, color: Color(0xFF00E599)),
                       SizedBox(width: 4),
                       Text(
                         'Step-Free Ramp',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFF6B2B)),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF00E599)),
                       ),
                     ],
                   ),
@@ -914,9 +878,9 @@ class _ExplorePageState extends State<ExplorePage> {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Bottom Row: Distance, Reviews count & Expand arrow
+          // Bottom Row: Distance, Reviews count & Direct Navigate HUD CTA Button
           Row(
             children: [
               if (d != null) ...[
@@ -930,24 +894,57 @@ class _ExplorePageState extends State<ExplorePage> {
                     color: Color(0xFFFF6B2B),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
               ],
-              const Icon(Icons.rate_review_outlined, size: 13, color: Color(0xFF94A3B8)),
-              const SizedBox(width: 4),
               Text(
                 '${p.reviews.length} reviews',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               ),
-              if (p.photoCount > 0) ...[
-                const SizedBox(width: 10),
-                const Icon(Icons.photo_camera_outlined, size: 13, color: Color(0xFF94A3B8)),
-                const SizedBox(width: 4),
-                Text(
-                  '${p.photoCount} photos',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                ),
-              ],
               const Spacer(),
+              // Quick EV Route Navigation Button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MapPage(initialPlace: p, autoStartNav: true),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF00F0FF).withValues(alpha: 0.15)
+                        : const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0284C7),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.navigation_rounded,
+                        size: 11,
+                        color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0284C7),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isCharging ? 'Charge' : 'Navigate',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0284C7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -967,3 +964,4 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 }
+

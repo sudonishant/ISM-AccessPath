@@ -13,6 +13,13 @@ void main() {
   });
 
   testWidgets('AccessPath app smoke & accessibility features test', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(600, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     // Build AccessPath application
     await tester.pumpWidget(const AccessPathApp());
     await tester.pumpAndSettle();
@@ -28,22 +35,22 @@ void main() {
     expect(find.text('Add Place'), findsOneWidget);
     expect(find.text('Profile'), findsOneWidget);
 
-    // 3. Verify Filter by Needs chips
+    // 3. Verify EV Cockpit Telemetry & Charging Station Beacon
+    expect(find.textContaining('BATTERY'), findsWidgets);
+    expect(find.textContaining('KM'), findsWidgets);
+    expect(find.textContaining('EV Charging'), findsWidgets);
+
+    // 4. Verify Filter by Needs chips
     expect(find.textContaining('Step-free Access'), findsWidgets);
     expect(find.textContaining('Lift'), findsWidgets);
     expect(find.textContaining('Washroom'), findsWidgets);
 
-    // 4. Verify seed places are displayed
+    // 5. Verify seed places & charging ports are displayed
     expect(find.textContaining('Herakles'), findsWidgets);
     expect(find.textContaining('Jasper'), findsWidgets);
+    expect(find.textContaining('NLHC Rapid Mobility'), findsWidgets);
 
-    // 5. Verify direct rendering of DetailPage for Herakles Hostel
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    // 6. Verify direct rendering of DetailPage for Herakles Hostel
 
     final herak = store.places.firstWhere((p) => p.id == 'herak');
     await tester.pumpWidget(
