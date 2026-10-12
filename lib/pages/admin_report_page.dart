@@ -19,12 +19,92 @@ class _AdminReportPageState extends State<AdminReportPage> {
   final String _selectedBuildingFilter = 'All';
   String _selectedCategoryFilter = 'All'; // All, Divyang, General, Photo
   final _noticeCtrl = TextEditingController();
+  final _serverUrlCtrl = TextEditingController();
   String _noticeBuildingId = 'herak';
 
   @override
   void dispose() {
     _noticeCtrl.dispose();
+    _serverUrlCtrl.dispose();
     super.dispose();
+  }
+
+  void _showServerConfigDialog(BuildContext context) {
+    _serverUrlCtrl.text = store.customBackendUrl ?? '';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFF00F0FF), width: 1),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.cloud_sync_rounded, color: Color(0xFF00F0FF)),
+            SizedBox(width: 8),
+            Text('Cloud Backend / Vercel', style: TextStyle(color: Colors.white, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Set Vercel or Custom Serverless Endpoint:',
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _serverUrlCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'https://accesspath-backend.vercel.app',
+                hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                filled: true,
+                fillColor: const Color(0xFF1E293B),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Current Base URL: ${store.serverBaseUrl}',
+              style: const TextStyle(color: Color(0xFF00F0FF), fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              store.setCustomBackendUrl(null);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Reset to default backend')),
+              );
+            },
+            child: const Text('Reset Default', style: TextStyle(color: Color(0xFFEF4444))),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF00F0FF),
+              foregroundColor: const Color(0xFF0B132B),
+            ),
+            onPressed: () {
+              final url = _serverUrlCtrl.text.trim();
+              store.setCustomBackendUrl(url.isEmpty ? null : url);
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('✅ Backend URL updated: ${store.serverBaseUrl}'),
+                  backgroundColor: const Color(0xFF10B981),
+                ),
+              );
+            },
+            child: const Text('Save & Sync', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showNoticeDialog(BuildContext context) {
@@ -337,6 +417,11 @@ End of Official Campus Accessibility Report
               ],
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.cloud_sync_rounded, color: Color(0xFF10B981)),
+                tooltip: 'Vercel / Cloud Backend Settings',
+                onPressed: () => _showServerConfigDialog(context),
+              ),
               IconButton(
                 icon: const Icon(Icons.summarize_rounded, color: Color(0xFF00F0FF)),
                 tooltip: 'Export Audit Report',

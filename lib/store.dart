@@ -23,14 +23,18 @@ class AppStore extends ChangeNotifier {
   ThemeMode themeMode = ThemeMode.dark;
   bool get isDarkMode => themeMode == ThemeMode.dark;
 
-  // Backend sync config (Local Server & Firebase Cloud)
+  // Backend sync config (Local Server, Vercel Serverless & Firebase Cloud)
   bool isSyncing = false;
   bool isOnline = true;
   Timer? _syncTimer;
   bool isFirstTimeUser = false;
+  String? customBackendUrl;
 
-  // Auto-detect server URL depending on platform
+  // Auto-detect server URL depending on platform or custom Vercel deployment
   String get serverBaseUrl {
+    if (customBackendUrl != null && customBackendUrl!.trim().isNotEmpty) {
+      return customBackendUrl!.trim();
+    }
     if (kIsWeb) return 'http://127.0.0.1:8080';
     try {
       if (Platform.isAndroid) {
@@ -65,6 +69,7 @@ class AppStore extends ChangeNotifier {
 
     final isDark = sp.getBool('isDarkMode') ?? true;
     themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    customBackendUrl = sp.getString('customBackendUrl');
 
     final userJson = sp.getString('currentUser');
     if (userJson != null) {
@@ -90,6 +95,18 @@ class AppStore extends ChangeNotifier {
     // Start background sync with backend server & Firebase Cloud
     syncWithBackend();
     _startSyncTimer();
+  }
+
+  Future<void> setCustomBackendUrl(String? url) async {
+    customBackendUrl = url?.trim();
+    final sp = await SharedPreferences.getInstance();
+    if (customBackendUrl != null && customBackendUrl!.isNotEmpty) {
+      await sp.setString('customBackendUrl', customBackendUrl!);
+    } else {
+      await sp.remove('customBackendUrl');
+    }
+    notifyListeners();
+    syncWithBackend();
   }
 
   Future<void> toggleTheme() async {
