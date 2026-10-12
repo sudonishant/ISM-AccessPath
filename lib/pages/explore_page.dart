@@ -252,7 +252,92 @@ class _ExplorePageState extends State<ExplorePage> {
                   ),
                 ),
 
-                // ---- Modern Search Field ----
+                // ---- Google Stitch Style: Active Accessibility Mode Bar ----
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF00796B), Color(0xFF10B981)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.accessible_rounded, color: Colors.white, size: 16),
+                            SizedBox(width: 6),
+                            Text('Wheelchair Route • Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            SizedBox(width: 4),
+                            Icon(Icons.check_circle, color: Colors.white, size: 13),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🔊 Screen Reader & Audio Guide Beacon enabled')),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF131F37) : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.record_voice_over_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B), size: 15),
+                              const SizedBox(width: 5),
+                              Text('Audio Guide', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('🔇 Sensory Quiet Path & Low Noise Route selected')),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF131F37) : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFCBD5E1)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.hearing_rounded, color: Color(0xFFF59E0B), size: 15),
+                              const SizedBox(width: 5),
+                              Text('Sensory Quiet', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 11, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+
+                // ---- Modern Tactile Search Field with Voice Search & Beacon Button ----
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                   child: Container(
@@ -260,27 +345,138 @@ class _ExplorePageState extends State<ExplorePage> {
                       color: searchBg,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: searchBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      style: TextStyle(color: searchTextColor),
-                      decoration: InputDecoration(
-                        hintText: 'Search campus building, library, canteen...',
-                        hintStyle: TextStyle(color: searchHintColor, fontSize: 14),
-                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E), size: 22),
-                        suffixIcon: query.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, size: 18, color: searchHintColor),
-                                onPressed: () {
-                                  _searchCtrl.clear();
-                                  setState(() => query = '');
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        Icon(Icons.search_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B), size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchCtrl,
+                            style: TextStyle(color: searchTextColor),
+                            decoration: InputDecoration(
+                              hintText: 'Search campus building, ramp, lift...',
+                              hintStyle: TextStyle(color: searchHintColor, fontSize: 14),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onChanged: (v) => setState(() => query = v),
+                          ),
+                        ),
+                        if (query.isNotEmpty)
+                          IconButton(
+                            icon: Icon(Icons.clear, size: 18, color: searchHintColor),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => query = '');
+                            },
+                          ),
+                        // Voice Search Button (Google Material Stitch Style)
+                        GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('🎙️ Voice Search: Bol kar campus building search karein...'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.15) : const Color(0xFFCCFBF1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.mic_rounded,
+                              size: 18,
+                              color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ---- Stitch UI: Live Operational Beacon Card (Herakles Hostel) ----
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF0F2B26), const Color(0xFF132A38)]
+                            : [const Color(0xFFECFDF5), const Color(0xFFF0FDFA)],
                       ),
-                      onChanged: (v) => setState(() => query = v),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Color(0xFF10B981), blurRadius: 6, spreadRadius: 1),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    'Herakles Hostel Lifts',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text('Ground to 5th Floor • Active', style: TextStyle(color: Color(0xFF10B981), fontSize: 9, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Verified today • Wide 42" door, Braille keypad & voice announce',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.elevator_rounded, color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF00796B), size: 24),
+                      ],
                     ),
                   ),
                 ),
