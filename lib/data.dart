@@ -474,4 +474,383 @@ List<Place> seedPlaces() => [
           Review(scores: [4, 4, 4, 4, 4], user: 'Vikas', userCategory: 'general', comment: 'Ground floor courts and club rooms are step-free. Elevator works fine.'),
         ],
       ),
+
+      // ------------------------------------------------------------
+      // 🏢 11. OPAL HOSTEL
+      // 5 Floors, 2 Lifts, 10 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'opal',
+        name: 'Opal Hostel',
+        type: 'Hostel',
+        lat: 23.8172,
+        lng: 86.4422,
+        floors: List.generate(5, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 10,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Wide Access Ramp with Textured Tiles',
+            '⬆️ Lifts: 2 Operational Elevators with Audio Floor Calling',
+            '🚻 Washrooms: 10 Total (2 Divyangjan Wheelchair Units with Grab Bars)',
+            '💺 Seating: Ground Mess Waiting & Courtyard Seating',
+            '🧭 Wayfinding: Braille Door Numbers & Floor Maps',
+          ],
+        )),
+        reviews: [
+          Review(scores: [5, 5, 4, 4, 4], user: 'Deepak', userCategory: 'general', comment: 'Ramp and lift access are completely smooth for wheelchair movement.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🏢 12. ROSALINE HOSTEL
+      // 5 Floors, 2 Lifts, 10 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'rosaline',
+        name: 'Rosaline Hostel',
+        type: 'Hostel',
+        lat: 23.8180,
+        lng: 86.4430,
+        floors: List.generate(5, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 10,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Non-Slip Front Porch Ramp',
+            '⬆️ Lifts: 2 Modern Elevators',
+            '🚻 Washrooms: 10 Total (2 Accessible with Support Rails)',
+            '💺 Seating: Common Room & Garden Benches',
+            '🧭 Wayfinding: High-Contrast Directional Indicators',
+          ],
+        )),
+        reviews: [
+          Review(scores: [5, 4, 5, 4, 5], user: 'Ananya', userCategory: 'disabled', disabilityType: 'Visual Impairment', comment: 'Audio elevator announcements and tactile markers make it very safe.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🏢 13. RUBY HOSTEL
+      // 5 Floors, 2 Lifts, 10 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'ruby',
+        name: 'Ruby Hostel',
+        type: 'Hostel',
+        lat: 23.8185,
+        lng: 86.4438,
+        floors: List.generate(5, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 10,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Concrete Ramp to Mess & Quadrangle',
+            '⬆️ Lifts: 2 Working Elevators',
+            '🚻 Washrooms: 10 Total (2 Accessible Units with Emergency Cord)',
+            '💺 Seating: Lounge Area Seating',
+          ],
+        )),
+        reviews: [
+          Review(scores: [4, 4, 4, 4, 4], user: 'Kavita', userCategory: 'general', comment: 'Elevator operates 24x7, accessible washroom on ground floor is well-maintained.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🏢 14. TOPAZ HOSTEL
+      // 5 Floors, 2 Lifts, 10 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'topaz',
+        name: 'Topaz Hostel',
+        type: 'Hostel',
+        lat: 23.8160,
+        lng: 86.4448,
+        floors: List.generate(5, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 10,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Entry Ramp with Dual Handrails',
+            '⬆️ Lifts: 2 High-Capacity Elevators',
+            '🚻 Washrooms: 10 Total (2 Barrier-Free Washrooms)',
+          ],
+        )),
+        reviews: [
+          Review(scores: [4, 4, 4, 4, 4], user: 'Arjun', userCategory: 'general', comment: 'Good wide doors for wheelchairs and clean lifts.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🏢 15. SAPPHIRE HOSTEL
+      // 5 Floors, 2 Lifts, 10 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'sapphire',
+        name: 'Sapphire Hostel',
+        type: 'Hostel',
+        lat: 23.8155,
+        lng: 86.4452,
+        floors: List.generate(5, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 10,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Level Ramp to Entrance & Dining Hall',
+            '⬆️ Lifts: 2 Elevators with Braille Plates',
+            '🚻 Washrooms: 10 Total (2 Accessible Restrooms)',
+          ],
+        )),
+        reviews: [
+          Review(scores: [4, 4, 4, 4, 4], user: 'Siddharth', userCategory: 'general', comment: 'Step-free access all the way to the dining hall.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 💻 16. COMPUTER SCIENCE & ENGINEERING (CSE BLOCK)
+      // 4 Floors, 2 Lifts, 8 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'cse_block',
+        name: 'Computer Science & Engineering (CSE Block)',
+        type: 'Academic',
+        lat: 23.8142,
+        lng: 86.4385,
+        floors: List.generate(4, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 8,
+          accessibleWashrooms: 2,
+          liftsCount: 2,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Gentle Ramp to Main Portico & Lab Foyer',
+            '⬆️ Lifts: 2 Glass Elevators with Voice Synthesis',
+            '🚻 Washrooms: 8 Total (2 Accessible Washrooms with Support Bars)',
+            '💺 Seating: Computing Labs with Height-Adjustable Accessible Desks',
+            '🧭 Wayfinding: Braille Lab Signage & Tactile Door Plates',
+          ],
+        )),
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 5], user: 'Rohan', userCategory: 'disabled', disabilityType: 'Wheelchair / Mobility', comment: 'Labs have custom wheelchair-accessible tables and smooth lift access.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // ⛏️ 17. MINING ENGINEERING COMPLEX (GOLDEN JUBILEE)
+      // 3 Floors, 1 Lift, 6 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'mining_dept',
+        name: 'Mining Engineering Complex',
+        type: 'Academic',
+        lat: 23.8148,
+        lng: 86.4410,
+        floors: List.generate(3, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 6,
+          accessibleWashrooms: 2,
+          liftsCount: 1,
+          hasRamp: i == 0,
+          facilities: [
+            if (i == 0) '🛗 Step-Free: Wide Ramp Entrance',
+            '⬆️ Lifts: 1 Passenger Elevator',
+            '🚻 Washrooms: 6 Total (2 Accessible Toilets)',
+          ],
+        )),
+        reviews: [
+          Review(scores: [4, 4, 4, 4, 4], user: 'Dr. Mukherjee', userCategory: 'general', comment: 'Retrofit lift and entrance ramp provide full access to lecture halls.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🏨 18. EXECUTIVE DEVELOPMENT CENTRE (EDC)
+      // 3 Floors, 1 Lift, 6 Washrooms/Floor (2 Accessible)
+      // ------------------------------------------------------------
+      Place(
+        id: 'edc',
+        name: 'Executive Development Centre (EDC)',
+        type: 'Facility',
+        lat: 23.8122,
+        lng: 86.4402,
+        floors: List.generate(3, (i) => FloorInfo(
+          floorNumber: i,
+          name: i == 0 ? 'Ground Floor' : 'Floor $i',
+          totalWashrooms: 6,
+          accessibleWashrooms: 2,
+          liftsCount: 1,
+          hasRamp: true,
+          facilities: [
+            '🛗 Step-Free: Executive Guest Ramp & Wide Automatic Doors',
+            '⬆️ Lifts: 1 Otis Elevator Serving Guest Rooms',
+            '🚻 Washrooms: 6 Total (2 Divyang Wheelchair Suites with Shower Grab Bars)',
+            '💺 Seating: Reception & Dining Room Priority Tables',
+          ],
+        )),
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 5], user: 'Prof. Sharma', userCategory: 'general', comment: 'Guest rooms on ground floor are fully wheelchair compliant.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🚻 19. PUBLIC WASHROOM — NLHC GROUND FLOOR (DEDICATED)
+      // ------------------------------------------------------------
+      Place(
+        id: 'washroom_nlhc',
+        name: 'Public Washroom — NLHC Ground Floor',
+        type: 'Washroom',
+        lat: 23.8147,
+        lng: 86.4391,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Ground Floor Restroom Complex',
+            totalWashrooms: 12,
+            accessibleWashrooms: 4,
+            liftsCount: 2,
+            hasRamp: true,
+            facilities: [
+              '🚻 4 Dedicated Divyangjan Toilets with Dual Stainless Grab Rails',
+              '🚨 Emergency Pull String Connected to Security Office',
+              '🚰 Low-Height Sensor Taps & Soap Dispensers',
+              '🚪 95cm Wide Outward Swing Doors with Lever Handles',
+              '🧹 Maintained Hourly with Anti-Slip Ceramic Flooring',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 5], user: 'Aarav K.', userCategory: 'disabled', disabilityType: 'Wheelchair / Mobility', comment: 'Best public washroom on campus. Ultra-wide door, sturdy grab rails, sensor taps.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🚻 20. PUBLIC WASHROOM — CENTRAL LIBRARY (DIVYANG SUITE)
+      // ------------------------------------------------------------
+      Place(
+        id: 'washroom_library',
+        name: 'Public Washroom — Central Library Ground',
+        type: 'Washroom',
+        lat: 23.8153,
+        lng: 86.4404,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Ground Level Divyang Restroom',
+            totalWashrooms: 8,
+            accessibleWashrooms: 3,
+            liftsCount: 2,
+            hasRamp: true,
+            facilities: [
+              '🚻 3 Dedicated Accessible Restrooms with Western Commode & Support Bars',
+              '🧭 Braille Tactile Door Plates at 1.2m Height',
+              '🔔 Flashing Alarm Beacon for Hearing-Impaired Students',
+              '♿ Zero Threshold Step-Free Entry',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 5, 5, 5, 5], user: 'Priya', userCategory: 'disabled', disabilityType: 'Visual Impairment', comment: 'Braille signage on the door and step-free entry make it very accessible.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // 🚻 21. PUBLIC WASHROOM — MAIN ADMIN BLOCK
+      // ------------------------------------------------------------
+      Place(
+        id: 'washroom_main',
+        name: 'Public Washroom — Main Admin Ground',
+        type: 'Washroom',
+        lat: 23.8145,
+        lng: 86.4414,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Heritage Ground Restroom Wing',
+            totalWashrooms: 6,
+            accessibleWashrooms: 2,
+            liftsCount: 1,
+            hasRamp: true,
+            facilities: [
+              '🚻 2 Accessible Cubicles with Grab Bars',
+              '♿ Direct Corridor Ramp Access',
+              '🚹🚺 Separate High-Capacity General Restrooms',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [4, 4, 4, 4, 4], user: 'Visitor', userCategory: 'general', comment: 'Easily accessible from the main heritage foyer.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // ☕ 22. SAC CAFETERIA & FOOD COURT
+      // ------------------------------------------------------------
+      Place(
+        id: 'sac_cafe',
+        name: 'SAC Cafeteria & Food Court',
+        type: 'Food',
+        lat: 23.8136,
+        lng: 86.4432,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Dining Area',
+            totalWashrooms: 4,
+            accessibleWashrooms: 1,
+            liftsCount: 1,
+            hasRamp: true,
+            facilities: [
+              '🛗 Step-Free: Ramp Entrance to Dining Hall & Order Counter',
+              '💺 Seating: Movable Chairs for Wheelchair Seating',
+              '🚻 Washrooms: 4 Total (1 Accessible Unit)',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 4, 4, 5, 4], user: 'Tanmay', userCategory: 'general', comment: 'Wide entrance ramp and spacious seating layout for wheelchairs.'),
+        ],
+      ),
+
+      // ------------------------------------------------------------
+      // ☕ 23. NESCAFE & STUDENT KIOSK
+      // ------------------------------------------------------------
+      Place(
+        id: 'nescafe_kiosk',
+        name: 'Nescafe & Student Kiosk',
+        type: 'Food',
+        lat: 23.8150,
+        lng: 86.4418,
+        floors: [
+          const FloorInfo(
+            floorNumber: 0,
+            name: 'Open Plaza Kiosk',
+            totalWashrooms: 0,
+            accessibleWashrooms: 0,
+            liftsCount: 0,
+            hasRamp: true,
+            facilities: [
+              '🛗 Step-Free: Paved Outdoor Plaza with Zero Kerbs',
+              '💺 Seating: Shaded Benches with Dedicated Wheelchair Spaces',
+            ],
+          ),
+        ],
+        reviews: [
+          Review(scores: [5, 4, 4, 5, 5], user: 'Manish', userCategory: 'general', comment: 'Completely open step-free plaza, easy spot to hang out between classes.'),
+        ],
+      ),
     ];

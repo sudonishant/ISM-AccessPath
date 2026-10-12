@@ -1,6 +1,6 @@
 // ============================================================
-// map_page.dart — Exclusively IIT (ISM) Dhanbad Campus Map
-// OpenStreetMap + Satellite Mode focused on Campus Landmarks
+// map_page.dart — Dynamic Public Campus Map & Facility Explorer
+// Ultra-Modern Frosted Glassmorphism UI (Dark & Light)
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models.dart';
 import '../store.dart';
+import '../widgets/glass_container.dart';
 import 'add_place_page.dart';
 import 'detail_page.dart';
 
@@ -22,7 +23,8 @@ class _MapPageState extends State<MapPage> {
   bool satellite = false;
   final mapCtrl = MapController();
   Place? _selectedPlace;
-  String _selectedCategory = 'All';
+  String _activeFilter = 'All';
+  final TextEditingController _searchCtrl = TextEditingController();
 
   // IIT (ISM) Dhanbad Campus Coordinates
   static const campusCenter = LatLng(23.8152, 86.4415);
@@ -31,26 +33,64 @@ class _MapPageState extends State<MapPage> {
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
   @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _centerOn(LatLng point) {
+    mapCtrl.move(point, 17.2);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListenableBuilder(
       listenable: store,
       builder: (context, _) {
-        final campusPlaces = store.places.where((p) {
-          if (_selectedCategory == 'All') return true;
-          return p.type.toLowerCase() == _selectedCategory.toLowerCase();
+        final query = _searchCtrl.text.trim().toLowerCase();
+
+        // Dynamic filtering based on public facilities & search query
+        final visiblePlaces = store.places.where((p) {
+          // Search query matching
+          if (query.isNotEmpty) {
+            final matchesName = p.name.toLowerCase().contains(query);
+            final matchesType = p.type.toLowerCase().contains(query);
+            if (!matchesName && !matchesType) return false;
+          }
+
+          // Category filter matching
+          switch (_activeFilter) {
+            case '🚻 Washrooms':
+              return p.type.toLowerCase() == 'washroom' || p.hasAccessibleWashroom;
+            case '🛗 Lifts':
+              return p.hasLift;
+            case '♿ Ramps':
+              return p.hasRamp;
+            case '🏢 Hostels':
+              return p.type.toLowerCase() == 'hostel';
+            case '🎓 Academic':
+              return p.type.toLowerCase() == 'academic' || p.type.toLowerCase() == 'library';
+            case '☕ Food':
+              return p.type.toLowerCase() == 'food';
+            case 'All':
+            default:
+              return true;
+          }
         }).toList();
 
         return Scaffold(
           body: Stack(
             children: [
-              // ---- Campus OpenStreetMap / Satellite Layer ----
+              // ---- OpenStreetMap / Satellite Layer ----
               FlutterMap(
                 mapController: mapCtrl,
                 options: MapOptions(
                   initialCenter: campusCenter,
                   initialZoom: 16.0,
-                  minZoom: 14.5,
-                  maxZoom: 18.5,
+                  minZoom: 14.0,
+                  maxZoom: 19.0,
                   onTap: (_, __) => setState(() => _selectedPlace = null),
                   onLongPress: (_, ll) => Navigator.push(
                     context,
@@ -65,48 +105,71 @@ class _MapPageState extends State<MapPage> {
                     userAgentPackageName: 'com.example.accesspath',
                   ),
 
-                  // ---- Campus Markers Layer ----
+                  // Markers Layer
                   MarkerLayer(
                     markers: [
-                      ...campusPlaces.map((p) {
+                      ...visiblePlaces.map((p) {
                         final isSelected = _selectedPlace?.id == p.id;
-                        final isHerak = p.id == 'herak';
+                        final isWashroom = p.type.toLowerCase() == 'washroom';
+                        final isHostel = p.type.toLowerCase() == 'hostel';
 
                         return Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: isHerak ? 64 : 54,
-                          height: isHerak ? 64 : 54,
+                          width: isSelected ? 72 : 56,
+                          height: isSelected ? 72 : 56,
                           child: GestureDetector(
-                            onTap: () => setState(() => _selectedPlace = p),
+                            onTap: () {
+                              setState(() => _selectedPlace = p);
+                              _centerOn(LatLng(p.lat, p.lng));
+                            },
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                // Pill badge showing type or score
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: p.color, width: isHerak ? 2 : 1.5),
+                                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFFFF6B2B)
+                                          : (isWashroom
+                                              ? const Color(0xFF38BDF8)
+                                              : (isHostel ? const Color(0xFF10B981) : const Color(0xFF64748B))),
+                                      width: isSelected ? 2.0 : 1.2,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.15),
-                                        blurRadius: 4,
+                                        color: Colors.black.withValues(alpha: 0.25),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: Text(
-                                    isHerak ? '🏢 HERAK' : (p.reviews.isEmpty ? 'NEW' : '${p.score}'),
+                                    isWashroom
+                                        ? '🚻 ${p.totalAccessibleWashrooms} Acc'
+                                        : (p.reviews.isEmpty ? 'NEW' : '${p.score}'),
                                     style: TextStyle(
-                                      fontSize: isHerak ? 8 : 9,
+                                      fontSize: 8,
                                       fontWeight: FontWeight.w800,
-                                      color: p.color,
+                                      color: isSelected
+                                          ? const Color(0xFFFF6B2B)
+                                          : (isDark ? Colors.white : const Color(0xFF0F172A)),
                                     ),
                                   ),
                                 ),
                                 Icon(
-                                  isHerak ? Icons.domain_rounded : Icons.location_on_rounded,
-                                  color: p.color,
-                                  size: isSelected ? 36 : (isHerak ? 32 : 28),
+                                  isWashroom
+                                      ? Icons.wc_rounded
+                                      : (isHostel ? Icons.domain_rounded : Icons.location_on_rounded),
+                                  color: isSelected
+                                      ? const Color(0xFFFF6B2B)
+                                      : (isWashroom
+                                          ? const Color(0xFF0284C7)
+                                          : (isHostel ? const Color(0xFF10B981) : const Color(0xFF0F766E))),
+                                  size: isSelected ? 38 : 30,
                                 ),
                               ],
                             ),
@@ -114,21 +177,21 @@ class _MapPageState extends State<MapPage> {
                         );
                       }),
 
-                      // Live User Location Marker
+                      // User GPS Location Pin
                       if (store.myPos != null)
                         Marker(
                           point: LatLng(store.myPos!.latitude, store.myPos!.longitude),
-                          width: 26,
-                          height: 26,
+                          width: 28,
+                          height: 28,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0F766E),
+                              color: const Color(0xFF00F0FF),
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF0F766E).withValues(alpha: 0.4),
-                                  blurRadius: 8,
+                                  color: const Color(0xFF00F0FF).withValues(alpha: 0.6),
+                                  blurRadius: 10,
                                   spreadRadius: 3,
                                 ),
                               ],
@@ -140,66 +203,120 @@ class _MapPageState extends State<MapPage> {
                 ],
               ),
 
-              // ---- Top Campus Filter Bar ----
+              // ---- Top Glassmorphic Search & Category Filters ----
               SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      // Floating Search Bar & Layer Switch
+                      GlassContainer(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.96),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
+                        borderRadius: 24,
                         child: Row(
                           children: [
-                            const Icon(Icons.school_rounded, size: 18, color: Color(0xFF0F766E)),
+                            const Icon(Icons.search_rounded, size: 20, color: Color(0xFFFF6B2B)),
                             const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'IIT (ISM) Dhanbad Campus Map',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchCtrl,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Search campus landmarks, washrooms, lifts...',
+                                  hintStyle: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                onChanged: (_) => setState(() {}),
                               ),
                             ),
-                            Text(
-                              '${campusPlaces.length} Landmarks',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                            if (_searchCtrl.text.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  _searchCtrl.clear();
+                                  setState(() {});
+                                },
+                                child: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                              ),
+                            const SizedBox(width: 6),
+                            // Map Layer Toggle (Satellite / Vector)
+                            GestureDetector(
+                              onTap: () => setState(() => satellite = !satellite),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: satellite
+                                      ? const Color(0xFFFF6B2B)
+                                      : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  satellite ? Icons.map_rounded : Icons.satellite_alt_rounded,
+                                  size: 16,
+                                  color: satellite ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 8),
 
-                      // Campus Category Selector Chips
+                      // Filter Capsules Bar
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: ['All', 'Hostel', 'Academic', 'Library', 'Health', 'Auditorium'].map((cat) {
-                            final isSel = _selectedCategory == cat;
+                          children: [
+                            'All',
+                            '🚻 Washrooms',
+                            '🛗 Lifts',
+                            '♿ Ramps',
+                            '🏢 Hostels',
+                            '🎓 Academic',
+                            '☕ Food',
+                          ].map((f) {
+                            final isSel = _activeFilter == f;
                             return Padding(
                               padding: const EdgeInsets.only(right: 6),
-                              child: ChoiceChip(
-                                label: Text(cat),
-                                selected: isSel,
-                                selectedColor: const Color(0xFF0F766E),
-                                labelStyle: TextStyle(
-                                  fontSize: 11,
-                                  color: isSel ? Colors.white : const Color(0xFF334155),
-                                  fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                              child: GestureDetector(
+                                onTap: () => setState(() => _activeFilter = f),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: isSel
+                                        ? const Color(0xFFFF6B2B)
+                                        : (isDark
+                                            ? const Color(0xFF131B2E).withValues(alpha: 0.8)
+                                            : Colors.white.withValues(alpha: 0.9)),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isSel ? const Color(0xFFFF6B2B) : (isDark ? Colors.white12 : Colors.black12),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.1),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    f,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                                      color: isSel ? Colors.white : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155)),
+                                    ),
+                                  ),
                                 ),
-                                onSelected: (val) {
-                                  if (val) setState(() => _selectedCategory = cat);
-                                },
                               ),
                             );
                           }).toList(),
@@ -210,147 +327,264 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
 
-              // ---- Selected Place Bottom Preview Card ----
+              // ---- Floating GPS & Quick Actions ----
+              Positioned(
+                right: 16,
+                bottom: _selectedPlace != null ? 240 : 80,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Recenter on Campus Button
+                    GestureDetector(
+                      onTap: () => _centerOn(campusCenter),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF131B2E).withValues(alpha: 0.9) : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.school_rounded, size: 20, color: Color(0xFFFF6B2B)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // My GPS Location Button
+                    GestureDetector(
+                      onTap: () async {
+                        await store.startWatch();
+                        if (store.myPos != null) {
+                          _centerOn(LatLng(store.myPos!.latitude, store.myPos!.longitude));
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF131B2E).withValues(alpha: 0.9) : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.my_location_rounded, size: 20, color: Color(0xFF38BDF8)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ---- Floating Add Public Spot Action Button ----
+              Positioned(
+                left: 16,
+                bottom: _selectedPlace != null ? 240 : 80,
+                child: GlassPillButton(
+                  text: '+ Add Public Spot',
+                  icon: Icons.add_location_alt_rounded,
+                  color: const Color(0xFFFF6B2B),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddPlacePage(),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ---- Selected Landmark Bottom Glassmorphic Preview Card ----
               if (_selectedPlace != null)
                 Positioned(
-                  bottom: 24,
-                  left: 16,
-                  right: 16,
-                  child: Container(
+                  bottom: 16,
+                  left: 14,
+                  right: 14,
+                  child: GlassContainer(
+                    borderRadius: 26,
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Card Header
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
-                                color: _selectedPlace!.color.withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: _selectedPlace!.color, width: 2),
+                                color: _selectedPlace!.color.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _selectedPlace!.color, width: 1.5),
                               ),
                               child: Center(
                                 child: Text(
                                   _selectedPlace!.reviews.isEmpty ? 'NEW' : '${_selectedPlace!.score}',
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
                                     color: _selectedPlace!.color,
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     _selectedPlace!.name,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    '${_selectedPlace!.type} • 🏢 ${_selectedPlace!.floorCount} Floors (2 Lifts)',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: _selectedPlace!.color,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          _selectedPlace!.type,
+                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Icon(_selectedPlace!.tierIcon, size: 12, color: _selectedPlace!.color),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        _selectedPlace!.tierLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: _selectedPlace!.color,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF0F766E),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => DetailPage(_selectedPlace!)),
-                                );
-                              },
-                              child: const Text('Floors ➜', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              onPressed: () => setState(() => _selectedPlace = null),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Facility Pills Row
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            // Washroom pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                '🚻 ${_selectedPlace!.totalAccessibleWashrooms} Accessible / ${_selectedPlace!.totalWashrooms} Toilets',
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF38BDF8)),
+                              ),
+                            ),
+                            // Lift pill
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (_selectedPlace!.hasLift ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: (_selectedPlace!.hasLift ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                _selectedPlace!.hasLift ? '🛗 Lifts: ${_selectedPlace!.totalLifts} Working' : '🛗 No Lift',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedPlace!.hasLift ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                ),
+                              ),
+                            ),
+                            // Ramp pill
+                            if (_selectedPlace!.hasRamp)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF6B2B).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFFF6B2B).withValues(alpha: 0.3)),
+                                ),
+                                child: const Text(
+                                  '♿ Step-Free Ramp',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFF6B2B)),
+                                ),
+                              ),
+                          ],
+                        ),
+
+                        if (_selectedPlace!.adminNotice != null && _selectedPlace!.adminNotice!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline_rounded, color: Color(0xFFB45309), size: 14),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    _selectedPlace!.adminNotice!,
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF92400E)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 12),
+                        // Action Button to Detail Page
+                        SizedBox(
+                          width: double.infinity,
+                          child: GlassPillButton(
+                            text: 'View Floor Breakdown & Reviews ↗',
+                            icon: Icons.layers_rounded,
+                            color: const Color(0xFFFF6B2B),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailPage(_selectedPlace!),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-
-              // ---- Map Control FABs ----
-              Positioned(
-                right: 16,
-                bottom: _selectedPlace != null ? 120 : 24,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FloatingActionButton.small(
-                      heroTag: 'satBtn',
-                      tooltip: 'Toggle Satellite Layer',
-                      backgroundColor: satellite ? const Color(0xFF0F766E) : Colors.white,
-                      onPressed: () => setState(() => satellite = !satellite),
-                      child: Icon(
-                        Icons.satellite_alt_rounded,
-                        color: satellite ? Colors.white : const Color(0xFF0F766E),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    FloatingActionButton.small(
-                      heroTag: 'campusCenterBtn',
-                      tooltip: 'Center on IIT (ISM) Campus',
-                      backgroundColor: Colors.white,
-                      onPressed: () {
-                        mapCtrl.move(campusCenter, 16.0);
-                      },
-                      child: const Icon(Icons.school_outlined, color: Color(0xFF0F766E)),
-                    ),
-                    const SizedBox(height: 10),
-                    FloatingActionButton.small(
-                      heroTag: 'locBtn',
-                      tooltip: 'My Real-Time GPS Location',
-                      backgroundColor: Colors.white,
-                      onPressed: () async {
-                        await store.startWatch();
-                        if (store.myPos != null) {
-                          mapCtrl.move(
-                            LatLng(store.myPos!.latitude, store.myPos!.longitude),
-                            16.5,
-                          );
-                        } else {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('GPS signal unavailable. Enable location services.')),
-                            );
-                          }
-                        }
-                      },
-                      child: const Icon(Icons.my_location_rounded, color: Color(0xFF0F766E)),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         );

@@ -276,6 +276,20 @@ class Place {
 
   int get floorCount => floors.isEmpty ? 1 : floors.length;
 
+  int get totalWashrooms => floors.fold<int>(0, (sum, f) => sum + f.totalWashrooms);
+
+  int get totalAccessibleWashrooms =>
+      floors.fold<int>(0, (sum, f) => sum + f.accessibleWashrooms);
+
+  int get totalLifts => floors.fold<int>(0, (sum, f) => sum + f.liftsCount);
+
+  bool get hasLift => totalLifts > 0 || isLiftOperational;
+
+  bool get hasRamp => floors.any((f) => f.hasRamp);
+
+  bool get hasAccessibleWashroom =>
+      totalAccessibleWashrooms > 0 || type.toLowerCase().contains('washroom');
+
   // ------------------------------------------------------------
   // 🤖 AI SUMMARY ENGINE
   // Synthesizes community sentiment, floor data, and ratings

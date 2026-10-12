@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import '../models.dart';
 import '../store.dart';
+import '../widgets/glass_container.dart';
 import 'detail_page.dart';
 import 'auth_page.dart';
 import 'ai_chat_page.dart';
@@ -671,7 +672,7 @@ class _ExplorePageState extends State<ExplorePage> {
                                   crossAxisCount: 2,
                                   crossAxisSpacing: 16,
                                   mainAxisSpacing: 16,
-                                  childAspectRatio: 1.55,
+                                  childAspectRatio: 1.35,
                                 ),
                                 itemCount: filteredList.length,
                                 itemBuilder: (context, i) {
@@ -704,226 +705,264 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget _buildPlaceCard(BuildContext context, Place p) {
     final d = store.distanceTo(p);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF131F37) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-    final chipBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final nameColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final divColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final divColor = isDark ? Colors.white10 : const Color(0xFFE2E8F0);
 
-    return InkWell(
+    return GlassContainer(
+      borderRadius: 24,
+      padding: const EdgeInsets.all(16),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => DetailPage(p)),
       ),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: cardBorder),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Title, Type badge & Score Circle
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: chipBg,
-                              borderRadius: BorderRadius.circular(6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Row: Title, Type badge, Community tag & Radial Score
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE0F2FE),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF38BDF8).withValues(alpha: 0.3) : const Color(0xFF0284C7).withValues(alpha: 0.3),
                             ),
-                            child: Text(
-                              p.type.toUpperCase(),
+                          ),
+                          child: Text(
+                            p.type.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        if (p.isCustom) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B2B).withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFF6B2B)),
+                            ),
+                            child: const Text(
+                              '🆕 Public',
                               style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
-                                letterSpacing: 0.5,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFFF6B2B),
                               ),
                             ),
                           ),
-                          if (p.isCustom) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: const Color(0xFFF59E0B)),
-                              ),
-                              child: const Text(
-                                '🆕 Community',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFFFBBF24),
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      p.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: nameColor,
+                        letterSpacing: -0.2,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        p.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: nameColor,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        p.tierLabel,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: p.color,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Radial Score Badge
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: p.color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: p.color.withValues(alpha: 0.5), width: 2),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
+                        Icon(p.tierIcon, size: 13, color: p.color),
+                        const SizedBox(width: 4),
                         Text(
-                          p.reviews.isEmpty ? 'NEW' : '${p.score}',
+                          p.tierLabel,
                           style: TextStyle(
-                            fontSize: p.reviews.isEmpty ? 11 : 16,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
                             color: p.color,
                           ),
                         ),
-                        if (p.reviews.isNotEmpty)
-                          Text(
-                            '/100',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: p.color.withValues(alpha: 0.8),
-                            ),
-                          ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+
+              // Radial Score Badge with glowing border
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: p.color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: p.color.withValues(alpha: 0.6), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: p.color.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        p.reviews.isEmpty ? 'NEW' : '${p.score}',
+                        style: TextStyle(
+                          fontSize: p.reviews.isEmpty ? 11 : 15,
+                          fontWeight: FontWeight.w900,
+                          color: p.color,
+                        ),
+                      ),
+                      if (p.reviews.isNotEmpty)
+                        Text(
+                          '/100',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            color: p.color.withValues(alpha: 0.8),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            const SizedBox(height: 12),
-            Divider(height: 1, color: divColor),
-            const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          Divider(height: 1, color: divColor),
+          const SizedBox(height: 10),
 
-            // Middle Row: 5 Category Accessibility Badges Preview
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: List.generate(5, (idx) {
-                final avgVal = p.avg(idx);
-                final isAvailable = avgVal >= 3.5;
-                final cat = kCategories[idx];
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: chipBg,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isAvailable ? const Color(0xFF10B981) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+          // Facilities & Washroom Indicators Row
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              // Washrooms summary
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wc_rounded, size: 12, color: Color(0xFF38BDF8)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${p.totalAccessibleWashrooms} Acc / ${p.totalWashrooms} Toilets',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF38BDF8)),
                     ),
+                  ],
+                ),
+              ),
+              // Lifts summary
+              if (p.hasLift)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(cat.$1, style: const TextStyle(fontSize: 11)),
-                      const SizedBox(width: 3),
+                      const Icon(Icons.elevator_rounded, size: 12, color: Color(0xFF10B981)),
+                      const SizedBox(width: 4),
                       Text(
-                        avgVal > 0 ? avgVal.toStringAsFixed(1) : '—',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: isAvailable ? const Color(0xFF10B981) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-                        ),
+                        '${p.totalLifts} Lifts Active',
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF10B981)),
                       ),
                     ],
                   ),
-                );
-              }),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Bottom Row: Distance, Reviews count & Photo count
-            Row(
-              children: [
-                if (d != null) ...[
-                  const Icon(Icons.near_me_outlined, size: 14, color: Color(0xFF00F0FF)),
-                  const SizedBox(width: 4),
-                  Text(
-                    d < 1000 ? '${d.round()} m away' : '${(d / 1000).toStringAsFixed(1)} km away',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF00F0FF),
-                    ),
+                ),
+              // Ramp indicator
+              if (p.hasRamp)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B2B).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFF6B2B).withValues(alpha: 0.25)),
                   ),
-                  const SizedBox(width: 12),
-                ],
-                const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Color(0xFF94A3B8)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.accessible_rounded, size: 12, color: Color(0xFFFF6B2B)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Step-Free Ramp',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFF6B2B)),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Bottom Row: Distance, Reviews count & Expand arrow
+          Row(
+            children: [
+              if (d != null) ...[
+                const Icon(Icons.near_me_rounded, size: 13, color: Color(0xFFFF6B2B)),
                 const SizedBox(width: 4),
                 Text(
-                  '${p.reviews.length} reviews',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                ),
-                if (p.photoCount > 0) ...[
-                  const SizedBox(width: 12),
-                  const Icon(Icons.photo_camera_outlined, size: 13, color: Color(0xFF94A3B8)),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${p.photoCount} photos',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                  d < 1000 ? '${d.round()} m away' : '${(d / 1000).toStringAsFixed(1)} km away',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFFF6B2B),
                   ),
-                ],
-                const Spacer(),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: Color(0xFF64748B),
+                ),
+                const SizedBox(width: 12),
+              ],
+              const Icon(Icons.rate_review_outlined, size: 13, color: Color(0xFF94A3B8)),
+              const SizedBox(width: 4),
+              Text(
+                '${p.reviews.length} reviews',
+                style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              ),
+              if (p.photoCount > 0) ...[
+                const SizedBox(width: 10),
+                const Icon(Icons.photo_camera_outlined, size: 13, color: Color(0xFF94A3B8)),
+                const SizedBox(width: 4),
+                Text(
+                  '${p.photoCount} photos',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                 ),
               ],
-            ),
-          ],
-        ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 11,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
