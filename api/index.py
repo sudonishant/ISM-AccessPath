@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
 # In-memory storage for serverless runtime fallback + file fallback
 DATA_DIR = "/tmp/accesspath_data"
@@ -62,8 +63,15 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
     def _get_path(self):
+        parsed = urlparse(self.path)
+        qs = parse_qs(parsed.query)
+        if "path" in qs and qs["path"]:
+            candidate = qs["path"][0]
+            clean = candidate.split("?")[0].rstrip("/")
+            return clean if clean else "/"
+
         forwarded = self.headers.get("x-forwarded-uri") or self.headers.get("x-matched-path")
-        target = forwarded if forwarded else self.path
+        target = forwarded if forwarded else parsed.path
         clean = target.split("?")[0].rstrip("/")
         return clean if clean else "/"
 
