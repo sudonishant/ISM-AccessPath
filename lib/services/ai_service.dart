@@ -12,10 +12,9 @@ class AIService {
   AIService._();
   static final AIService instance = AIService._();
 
-  static String get _apiKey {
-    const enc = '***REMOVED_SECRET***';
-    return utf8.decode(base64.decode(enc));
-  }
+  // This URL is public configuration, never an API key.
+  // The backend must authenticate callers, rate-limit requests, and hold provider secrets.
+  static const String _aiProxyUrl = String.fromEnvironment('AI_PROXY_URL');
 
   // Candidate free text and vision models in priority order
   static const List<String> _freeModels = [
@@ -111,6 +110,10 @@ class AIService {
       return 'Namaste! 🙏 Mai AccessPath ka dedicated campus assistant hoon. Mai sirf IIT (ISM) Dhanbad campus accessibility, buildings, public washrooms, elevators aur ramps se jude sawaalon ka jawab deta hoon. Kripya campus navigation ya app features ke baare me poochhein!';
     }
 
+    if (_aiProxyUrl.isEmpty) {
+      return _generateLocalSmartFallback(question, isPassiveAggressive: isPassiveAggressive);
+    }
+
     final contextInfo = _buildCampusKnowledgeBase();
 
     final systemPrompt = isPassiveAggressive
@@ -166,9 +169,8 @@ Rules:
     for (final model in _freeModels) {
       try {
         final res = await http.post(
-          Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+          Uri.parse(_aiProxyUrl),
           headers: {
-            'Authorization': 'Bearer $_apiKey',
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://accesspath.iitism.ac.in',
             'X-Title': 'AccessPath ISM Dhanbad',
@@ -203,6 +205,10 @@ Rules:
     String? prompt,
     bool isPassiveAggressive = false,
   }) async {
+    if (_aiProxyUrl.isEmpty) {
+      return 'Online image inspection is unavailable until a secure AI backend is configured. No compliance assessment has been performed.';
+    }
+
     final userPrompt = prompt ??
         'Analyze this campus accessibility photo for Divyangjan / wheelchair standards. Inspect ramp gradient, handrails, door clearance (>90cm), tactile paving, grab bars, and safety compliance.';
 
@@ -213,9 +219,8 @@ Rules:
     for (final model in _visionModels) {
       try {
         final res = await http.post(
-          Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+          Uri.parse(_aiProxyUrl),
           headers: {
-            'Authorization': 'Bearer $_apiKey',
             'Content-Type': 'application/json',
             'HTTP-Referer': 'https://accesspath.iitism.ac.in',
             'X-Title': 'AccessPath Vision AI',

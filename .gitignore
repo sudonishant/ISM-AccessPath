@@ -48,3 +48,13 @@ app.*.map.json
 .widget_preview/
 *.apk
 backend/data/
+
+# Credential hygiene: never commit local secrets or generated key stores.
+.env
+.env.*
+!.env.example
+!.env.template
+config/store.key
+config/secure_store.json
+**/config/store.key
+**/config/secure_store.json
