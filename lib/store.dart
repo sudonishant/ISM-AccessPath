@@ -19,8 +19,15 @@ class AppStore extends ChangeNotifier {
   AppUser? currentUser; // Logged-in user (Student or Admin)
   Position? myPos;
 
-  // Dynamic Theme mode (Dark & Light support)
-  ThemeMode themeMode = ThemeMode.dark;
+  // In-app targeted notifications
+  List<AppNotification> notifications = [];
+  int get unreadNotificationsCount => notifications.where((n) => !n.isRead).length;
+
+  // Active Safety & Animal Hazard Beacons (Real-time OpenCV Vision Detection)
+  List<SafetyHazardBeacon> activeHazards = [];
+
+  // Dynamic Theme mode (follows system device theme automatically)
+  ThemeMode themeMode = ThemeMode.system;
   bool get isDarkMode => themeMode == ThemeMode.dark;
 
   // Backend sync config (Local Server, Vercel Serverless & Firebase Cloud)
@@ -60,24 +67,16 @@ class AppStore extends ChangeNotifier {
     final hasOpenedBefore = sp.getBool('hasOpenedBefore') ?? false;
     isFirstTimeUser = !hasOpenedBefore;
 
-    final isDark = sp.getBool('isDarkMode') ?? true;
-    themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    // Follow device system theme automatically
+    themeMode = ThemeMode.system;
     customBackendUrl = sp.getString('customBackendUrl');
 
     final userJson = sp.getString('currentUser');
     if (userJson != null) {
       currentUser = AppUser.fromJson(jsonDecode(userJson));
+      await fetchNotifications();
     } else {
-      // Default initial demo user: Aman (Student, Wheelchair user)
-      currentUser = const AppUser(
-        id: 'u1',
-        name: 'Aman Sharma',
-        rollNo: '22JE0123',
-        email: 'aman.22je0123@iitism.ac.in',
-        role: UserRole.student,
-        avatarEmoji: '🧑‍🦽',
-        needsPreference: 'Wheelchair User',
-      );
+      currentUser = null;
     }
 
     final dj = sp.getString('places');
@@ -85,10 +84,43 @@ class AppStore extends ChangeNotifier {
         ? (jsonDecode(dj) as List).map((e) => Place.fromJson(e)).toList()
         : seedPlaces();
 
+    final hzJson = sp.getString('active_campus_hazards');
+    activeHazards = hzJson != null
+        ? (jsonDecode(hzJson) as List).map((e) => SafetyHazardBeacon.fromJson(e)).toList()
+        : _seedHazards();
+    fetchHazards();
+
     // Start background sync with backend server & Firebase Cloud
     syncWithBackend();
     _startSyncTimer();
   }
+
+  List<SafetyHazardBeacon> _seedHazards() => [
+        SafetyHazardBeacon(
+          id: 'hz_seed_1',
+          type: 'animal_dog',
+          title: 'Stray Dog Pack spotted',
+          description: '3-4 aggressive dogs resting near Amber Hostel ramp walkway. Acoustic repeller active.',
+          lat: 23.8129,
+          lng: 86.4402,
+          severity: 'high',
+          threatClass: 'dog',
+          reportedBy: 'Amber Hall Warden',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 8)),
+        ),
+        SafetyHazardBeacon(
+          id: 'hz_seed_2',
+          type: 'animal_monkey',
+          title: 'Simian / Monkey troop near tree line',
+          description: 'Monkeys reported grabbing snack packets along Student Activity Centre (SAC) pathway.',
+          lat: 23.8160,
+          lng: 86.4428,
+          severity: 'medium',
+          threatClass: 'monkey',
+          reportedBy: 'SAC Security Post',
+          timestamp: DateTime.now().subtract(const Duration(minutes: 25)),
+        ),
+      ];
 
   Future<void> setCustomBackendUrl(String? url) async {
     customBackendUrl = url?.trim();
@@ -104,24 +136,116 @@ class AppStore extends ChangeNotifier {
 
   Future<void> toggleTheme() async {
     themeMode = (themeMode == ThemeMode.dark) ? ThemeMode.light : ThemeMode.dark;
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool('isDarkMode', themeMode == ThemeMode.dark);
     notifyListeners();
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
-    final sp = await SharedPreferences.getInstance();
-    await sp.setBool('isDarkMode', themeMode == ThemeMode.dark);
     notifyListeners();
   }
 
   void _startSyncTimer() {
     _syncTimer?.cancel();
-    // Poll backend every 12 seconds so updates on device A reflect on device B
-    _syncTimer = Timer.periodic(const Duration(seconds: 12), (_) {
+    // Poll backend every 6 seconds so updates on device A reflect on device B in real-time
+    _syncTimer = Timer.periodic(const Duration(seconds: 6), (_) {
       pullUpdatesFromBackend();
+      fetchHazards();
+      if (currentUser != null) {
+        fetchNotifications();
+      }
     });
+  }
+
+  // Fetch active safety hazards from backend
+  Future<void> fetchHazards() async {
+    if (kDebugMode && Platform.environment.containsKey('FLUTTER_TEST')) return;
+    try {
+      final uri = Uri.parse('$serverBaseUrl/api/hazards');
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['hazards'] is List) {
+          final serverHazards = (data['hazards'] as List)
+              .map((e) => SafetyHazardBeacon.fromJson(e))
+              .toList();
+          if (serverHazards.isNotEmpty) {
+            activeHazards = serverHazards;
+            final sp = await SharedPreferences.getInstance();
+            sp.setString('active_campus_hazards', jsonEncode(activeHazards.map((h) => h.toJson()).toList()));
+            notifyListeners();
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Broadcast safety hazard beacon (pins to map, triggers sound/light alert, and syncs to community)
+  Future<void> broadcastHazard(SafetyHazardBeacon beacon) async {
+    activeHazards.removeWhere((h) => h.id == beacon.id);
+    activeHazards.insert(0, beacon);
+    save();
+    notifyListeners();
+
+    // Add local notification
+    notifications.insert(0, AppNotification(
+      id: 'local_hazard_${DateTime.now().millisecondsSinceEpoch}',
+      targetUser: currentUser?.name ?? 'all',
+      fromUser: beacon.reportedBy,
+      title: '${beacon.icon} Campus Hazard Alert: ${beacon.title}',
+      message: '${beacon.description} Location pinned on campus map.',
+      placeId: beacon.id,
+      time: DateTime.now(),
+    ));
+    notifyListeners();
+
+    // Instant multi-device push to backend server
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      http.post(
+        Uri.parse('$serverBaseUrl/api/hazards'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: jsonEncode(beacon.toJson()),
+      ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+    }
+  }
+
+  // Fetch targeted notifications for this logged-in user
+  Future<void> fetchNotifications() async {
+    if (currentUser == null) return;
+    if (kDebugMode && Platform.environment.containsKey('FLUTTER_TEST')) return;
+    try {
+      final userQuery = Uri.encodeComponent(currentUser!.name);
+      final uri = Uri.parse('$serverBaseUrl/api/notifications?user=$userQuery');
+      final res = await http.get(uri).timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['notifications'] is List) {
+          notifications = (data['notifications'] as List)
+              .map((e) => AppNotification.fromJson(e))
+              .toList();
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Mark in-app notifications as read
+  Future<void> markNotificationsRead() async {
+    for (final n in notifications) {
+      n.isRead = true;
+    }
+    notifyListeners();
+    if (currentUser == null) return;
+    try {
+      final uri = Uri.parse('$serverBaseUrl/api/notifications/read');
+      await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: jsonEncode({
+          'user': currentUser!.name,
+          'id': 'all',
+        }),
+      ).timeout(const Duration(seconds: 4));
+    } catch (_) {}
   }
 
   Future<void> completeOnboarding() async {
@@ -134,11 +258,16 @@ class AppStore extends ChangeNotifier {
   Future<void> save() async {
     final sp = await SharedPreferences.getInstance();
     if (currentUser != null) {
-      sp.setString('currentUser', jsonEncode(currentUser!.toJson()));
+      final uJson = jsonEncode(currentUser!.toJson());
+      sp.setString('currentUser', uJson);
+      sp.setString('user_profile_${currentUser!.id}', uJson);
+      sp.setString('user_profile_${currentUser!.rollNo.toLowerCase()}', uJson);
+      sp.setString('user_profile_${currentUser!.email.toLowerCase()}', uJson);
     } else {
       sp.remove('currentUser');
     }
     sp.setString('places', jsonEncode(places.map((p) => p.toJson()).toList()));
+    sp.setString('active_campus_hazards', jsonEncode(activeHazards.map((h) => h.toJson()).toList()));
 
     // Also push to backend server and Firebase Cloud asynchronously
     syncWithBackend();
@@ -246,19 +375,33 @@ class AppStore extends ChangeNotifier {
       needsPreference: persona,
     );
     await save();
+    fetchNotifications();
     notifyListeners();
   }
 
   // 2. Already User Login
   Future<bool> login({required String identifier, required String password}) async {
-    // Demo account matching or creating session
     if (identifier.toLowerCase().contains('admin')) {
       return adminLogin(email: identifier, pin: password);
     }
 
+    final sp = await SharedPreferences.getInstance();
+    final cleanId = identifier.trim().toLowerCase();
+    final savedProfile = sp.getString('user_profile_$cleanId');
+    if (savedProfile != null) {
+      try {
+        currentUser = AppUser.fromJson(jsonDecode(savedProfile));
+        await save();
+        fetchNotifications();
+        notifyListeners();
+        return true;
+      } catch (_) {}
+    }
+
+    final displayName = identifier.contains('@') ? identifier.split('@').first : identifier;
     currentUser = AppUser(
-      id: 'u_${identifier.hashCode}',
-      name: identifier.split('@').first,
+      id: 'u_${cleanId.hashCode.abs()}',
+      name: displayName,
       rollNo: identifier.contains('@') ? identifier.split('@').first : identifier,
       email: identifier.contains('@') ? identifier : '$identifier@iitism.ac.in',
       role: UserRole.student,
@@ -266,6 +409,7 @@ class AppStore extends ChangeNotifier {
       needsPreference: 'Student',
     );
     await save();
+    fetchNotifications();
     notifyListeners();
     return true;
   }
@@ -284,6 +428,7 @@ class AppStore extends ChangeNotifier {
         needsPreference: 'Campus Administration',
       );
       await save();
+      fetchNotifications();
       notifyListeners();
       return true;
     }
@@ -322,24 +467,59 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  // ---------------- DATA ACTIONS ----------------
+  // ---------------- DATA ACTIONS (CROSS-DEVICE SYNC) ----------------
 
   void addReview(Place p, Review r) {
     p.reviews.add(r);
     save();
     notifyListeners();
+
+    // Instant push to backend for real-time reflection across devices
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      http.post(
+        Uri.parse('$serverBaseUrl/api/reviews'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: jsonEncode({
+          'placeId': p.id,
+          'review': r.toJson(),
+        }),
+      ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+    }
   }
 
   void upvoteReview(Place p, Review r) {
     r.upvotes += 1;
     save();
     notifyListeners();
+
+    // Send targeted like notification specifically to review author
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      http.post(
+        Uri.parse('$serverBaseUrl/api/reviews/like'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: jsonEncode({
+          'placeId': p.id,
+          'reviewUser': r.user,
+          'likedBy': currentUser?.name ?? 'A fellow student',
+          'placeName': p.name,
+        }),
+      ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+    }
   }
 
   void addPlace(Place p) {
     places.add(p);
     save();
     notifyListeners();
+
+    // Instant push to backend for real-time reflection across devices
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      http.post(
+        Uri.parse('$serverBaseUrl/api/places'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: jsonEncode(p.toJson()),
+      ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+    }
   }
 
   // ---------------- 📍 LOCATION & DWELL DETECTION ----------------

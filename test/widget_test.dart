@@ -35,20 +35,22 @@ void main() {
     expect(find.text('Add Place'), findsOneWidget);
     expect(find.text('Profile'), findsOneWidget);
 
-    // 3. Verify EV Cockpit Telemetry & Charging Station Beacon
-    expect(find.textContaining('BATTERY'), findsWidgets);
-    expect(find.textContaining('KM'), findsWidgets);
-    expect(find.textContaining('EV Charging'), findsWidgets);
+    // 3. Verify Campus Accessibility Radar & Notification Alerts
+    expect(find.textContaining('Campus Accessibility Radar'), findsOneWidget);
+    expect(find.textContaining('Lifts'), findsWidgets);
+    expect(find.textContaining('Restrooms'), findsWidgets);
+    expect(find.textContaining('Hazards'), findsWidgets);
+    expect(find.textContaining('AI Vision & Animal Buzzer'), findsOneWidget);
 
     // 4. Verify Filter by Needs chips
     expect(find.textContaining('Step-free Access'), findsWidgets);
     expect(find.textContaining('Lift'), findsWidgets);
     expect(find.textContaining('Washroom'), findsWidgets);
 
-    // 5. Verify seed places & charging ports are displayed
+    // 5. Verify seed places are displayed
     expect(find.textContaining('Herakles'), findsWidgets);
     expect(find.textContaining('Jasper'), findsWidgets);
-    expect(find.textContaining('NLHC Rapid Mobility'), findsWidgets);
+    expect(find.textContaining('Lecture Hall'), findsWidgets);
 
     // 6. Verify direct rendering of DetailPage for Herakles Hostel
 

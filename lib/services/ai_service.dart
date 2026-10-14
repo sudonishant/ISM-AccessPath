@@ -86,7 +86,9 @@ class AIService {
       'accesspath', 'route', 'map', 'path', 'floor', 'room', 'canteen', 'food',
       'health', 'edc', 'opal', 'ruby', 'amber', 'jasper', 'topaz', 'sapphire',
       'rosaline', 'mining', 'cse', 'review', 'rating', 'sync', 'theme', 'profile',
-      'kahan', 'kaise', 'kidhar', 'entry', 'door', 'seating', 'braille'
+      'kahan', 'kaise', 'kidhar', 'entry', 'door', 'seating', 'braille',
+      'dog', 'monkey', 'cattle', 'cow', 'bull', 'snake', 'animal', 'hazard',
+      'pothole', 'buzzer', 'strobe', 'detector', 'cv', 'opencv', 'safe', 'safety', 'detour'
     ];
 
     final hasOnTopic = onTopicWords.any((w) => lq.contains(w));

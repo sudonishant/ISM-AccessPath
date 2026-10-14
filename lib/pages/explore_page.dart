@@ -3,16 +3,15 @@
 // EV Smart Mobility Cockpit & Telemetry HUD Redesign
 // ============================================================
 
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models.dart';
 import '../store.dart';
 import '../widgets/glass_container.dart';
-import '../widgets/ev_dashboard_widgets.dart';
 import 'detail_page.dart';
 import 'auth_page.dart';
 import 'ai_chat_page.dart';
 import 'map_page.dart';
+import 'vision_detector_page.dart';
 
 class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
@@ -25,8 +24,6 @@ class _ExplorePageState extends State<ExplorePage> {
   final Set<int> needs = {}; // Selected accessibility category filters
   String query = '';
   final TextEditingController _searchCtrl = TextEditingController();
-  String _driveMode = 'Step-Free Safe';
-  final double _batteryPercent = 88.0;
 
   @override
   void dispose() {
@@ -124,36 +121,59 @@ class _ExplorePageState extends State<ExplorePage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Theme Toggle Button (Dark 🌙 / Light ☀️)
+                          // Targeted In-App Notifications Bell
                           GestureDetector(
-                            onTap: () => store.toggleTheme(),
+                            onTap: () => _showNotificationsSheet(context, isDark),
                             child: Container(
                               margin: const EdgeInsets.only(right: 6),
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFEF3C7),
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.4) : const Color(0xFFF59E0B),
+                                  color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.4) : const Color(0xFFCBD5E1),
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                    store.unreadNotificationsCount > 0
+                                        ? Icons.notifications_active_rounded
+                                        : Icons.notifications_none_rounded,
                                     size: 13,
-                                    color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
+                                    color: store.unreadNotificationsCount > 0
+                                        ? const Color(0xFFFF6B2B)
+                                        : (isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E)),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    isDark ? 'Light' : 'Dark',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark ? Colors.white : const Color(0xFFB45309),
+                                  if (store.unreadNotificationsCount > 0) ...[
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFF4D4F),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${store.unreadNotificationsCount}',
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ] else ...[
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Alerts',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? Colors.white : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -431,77 +451,214 @@ class _ExplorePageState extends State<ExplorePage> {
                 ),
                 const SizedBox(height: 6),
 
-                // ---- Scrollable EV Cockpit & Places Feed ----
+                // ---- Scrollable Campus Places Feed ----
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.only(bottom: 24),
                     children: [
-                      // ---- 1. EV Cockpit Telemetry Dial ----
+                      // ---- Campus Accessibility Radar Overview ----
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-                        child: EvBatteryHudDial(
-                          batteryPercent: _batteryPercent,
-                          estimatedRangeKm: (_batteryPercent * 0.16),
-                          driveMode: _driveMode,
-                          onModeToggle: () {
-                            setState(() {
-                              if (_driveMode == 'Step-Free Safe') {
-                                _driveMode = 'Eco Cruise';
-                              } else if (_driveMode == 'Eco Cruise') {
-                                _driveMode = 'Boost Radar';
-                              } else {
-                                _driveMode = 'Step-Free Safe';
-                              }
-                            });
-                          },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: isDark
+                                  ? [const Color(0xFF0F172A), const Color(0xFF1E293B)]
+                                  : [Colors.white, const Color(0xFFF8FAFC)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF00F0FF).withValues(alpha: 0.15) : const Color(0xFFCCFBF1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.radar_rounded,
+                                      size: 16,
+                                      color: isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      'Campus Accessibility Radar',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                                    ),
+                                    child: const Text(
+                                      'LIVE AUDITED',
+                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF10B981)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildRadarStatTile(
+                                      icon: Icons.business_rounded,
+                                      count: '${store.places.length}',
+                                      label: 'Venues',
+                                      isDark: isDark,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _buildRadarStatTile(
+                                      icon: Icons.elevator_rounded,
+                                      count: '${store.places.fold<int>(0, (acc, p) => acc + p.totalLifts)}',
+                                      label: 'Lifts',
+                                      isDark: isDark,
+                                      onTap: () => setState(() => query = 'lift'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _buildRadarStatTile(
+                                      icon: Icons.accessible_forward_rounded,
+                                      count: '${store.places.fold<int>(0, (acc, p) => acc + p.totalAccessibleWashrooms)}',
+                                      label: 'Restrooms',
+                                      isDark: isDark,
+                                      onTap: () => setState(() => query = 'washroom'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _buildRadarStatTile(
+                                      icon: Icons.shield_rounded,
+                                      count: '${store.activeHazards.length}',
+                                      label: 'Hazards',
+                                      isDark: isDark,
+                                      accentColor: const Color(0xFFEF4444),
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const VisionDetectorPage()),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-
-                      // ---- 2. EV Telemetry Metric Tiles Bar ----
-                      EvTelemetryMetricTilesBar(
-                        totalChargingPorts: 12,
-                        availableChargingPorts: 9,
-                        activeLifts: store.places.fold<int>(0, (acc, p) => acc + p.totalLifts),
-                        totalRestrooms: store.places.fold<int>(0, (acc, p) => acc + p.totalAccessibleWashrooms),
-                        onChargingTap: () {
-                          final bay = store.places.firstWhere(
-                            (p) => p.isChargingStation,
-                            orElse: () => store.places.first,
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MapPage(initialPlace: bay, autoStartNav: true),
-                            ),
-                          );
-                        },
-                        onLiftsTap: () => setState(() => query = 'lift'),
-                        onRestroomsTap: () => setState(() => query = 'washroom'),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // ---- 3. EV Rapid Mobility Charging Bay Beacon Card ----
-                      EvChargingBeaconCard(
-                        stationName: 'NLHC Rapid Mobility Charging Station',
-                        location: 'New Lecture Hall Complex • Ground North Portico',
-                        totalPorts: 4,
-                        availablePorts: 3,
-                        powerRating: '220V Rapid AC & DC • Green Solar',
-                        onNavigate: () {
-                          final bay = store.places.firstWhere(
-                            (p) => p.id == 'charging_nlhc',
-                            orElse: () => store.places.firstWhere((p) => p.isChargingStation, orElse: () => store.places.first),
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MapPage(initialPlace: bay, autoStartNav: true),
-                            ),
-                          );
-                        },
-                      ),
                       const SizedBox(height: 6),
+
+                      // ---- AI Vision & Animal Deterrent Scanner Launcher ----
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        child: InkWell(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const VisionDetectorPage()),
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isDark
+                                    ? [const Color(0xFF131D38), const Color(0xFF0F172A)]
+                                    : [const Color(0xFFEFF6FF), const Color(0xFFE0E7FF)],
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: const Color(0xFF00F0FF).withValues(alpha: isDark ? 0.4 : 0.3),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF00F0FF).withValues(alpha: isDark ? 0.12 : 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF00F0FF), Color(0xFF3B82F6)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'AI Vision & Animal Buzzer',
+                                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Text(
+                                              'LIVE OPENCV',
+                                              style: TextStyle(color: Color(0xFFEF4444), fontSize: 8, fontWeight: FontWeight.w900),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Real-time camera detection for stray dogs, monkeys & cattle with acoustic repellent buzzer & strobe light.',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF00F0FF)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
 
                       // ---- 6. Place List Header ----
                       Padding(
@@ -607,10 +764,8 @@ class _ExplorePageState extends State<ExplorePage> {
     final divColor = isDark ? Colors.white10 : const Color(0xFFE2E8F0);
     final isCharging = p.isChargingStation;
 
-    // EV Battery Consumption Estimate (e.g. 0.1 kWh per 300m)
-    final distanceM = d ?? 350;
-    final kwhEstimate = (distanceM / 1000.0 * 0.18).toStringAsFixed(2);
-    final batteryPercentDraw = math.max(1, (distanceM / 350).round());
+    // Clean Campus Distance
+    final distanceLabel = d != null ? (d < 1000 ? '${d.round()}m' : '${(d / 1000).toStringAsFixed(1)}km') : 'Nearby';
 
     return GlassContainer(
       borderRadius: 24,
@@ -790,22 +945,32 @@ class _ExplorePageState extends State<ExplorePage> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              // EV Battery Consumption Telemetry Pill
+              // Step-Free Access / Venue Type Pill
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B2B).withValues(alpha: 0.12),
+                  color: (p.hasRamp ? const Color(0xFF10B981) : const Color(0xFF38BDF8)).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFF6B2B).withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: (p.hasRamp ? const Color(0xFF10B981) : const Color(0xFF38BDF8)).withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFFF6B2B)),
+                    Icon(
+                      p.hasRamp ? Icons.accessible_forward_rounded : Icons.location_on_rounded,
+                      size: 12,
+                      color: p.hasRamp ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+                    ),
                     const SizedBox(width: 3),
                     Text(
-                      isCharging ? 'High Voltage Hub' : '-$kwhEstimate kWh (~$batteryPercentDraw%)',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFF6B2B)),
+                      p.hasRamp ? 'Step-Free Ramp' : distanceLabel,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: p.hasRamp ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+                      ),
                     ),
                   ],
                 ),
@@ -961,6 +1126,192 @@ class _ExplorePageState extends State<ExplorePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRadarStatTile({
+    required IconData icon,
+    required String count,
+    required String label,
+    required bool isDark,
+    Color? accentColor,
+    VoidCallback? onTap,
+  }) {
+    final effectiveColor = accentColor ?? (isDark ? const Color(0xFF00F0FF) : const Color(0xFF0F766E));
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: accentColor != null
+                ? accentColor.withValues(alpha: 0.35)
+                : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 14, color: effectiveColor),
+            const SizedBox(height: 4),
+            Text(
+              count,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: accentColor ?? (isDark ? Colors.white : const Color(0xFF0F172A)),
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNotificationsSheet(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return ListenableBuilder(
+          listenable: store,
+          builder: (context, _) {
+            final notifs = store.notifications;
+            final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+            final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B2B).withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.notifications_active_rounded, color: Color(0xFFFF6B2B), size: 18),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Campus Notifications',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (notifs.isNotEmpty)
+                          TextButton(
+                            onPressed: () => store.markNotificationsRead(),
+                            child: const Text('Mark all read', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00F0FF))),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (notifs.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 36),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.notifications_none_rounded, size: 40, color: textSecondary.withValues(alpha: 0.4)),
+                              const SizedBox(height: 10),
+                              Text(
+                                'No notifications yet',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'When someone likes or interacts with your reviews, you will receive a notification here!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12, color: textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: notifs.length,
+                          separatorBuilder: (_, __) => Divider(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+                          itemBuilder: (context, i) {
+                            final n = notifs[i];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: n.isRead
+                                      ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9))
+                                      : const Color(0xFFFF6B2B).withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.thumb_up_alt_rounded,
+                                  size: 16,
+                                  color: n.isRead ? textSecondary : const Color(0xFFFF6B2B),
+                                ),
+                              ),
+                              title: Text(
+                                n.title,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: n.isRead ? FontWeight.w600 : FontWeight.bold,
+                                  color: textPrimary,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    n.message,
+                                    style: TextStyle(fontSize: 12, color: textSecondary),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    n.timeAgo,
+                                    style: TextStyle(fontSize: 10, color: textSecondary.withValues(alpha: 0.7)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

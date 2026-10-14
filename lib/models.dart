@@ -373,3 +373,142 @@ class Place {
 
 // Backward compatibility alias for Profile -> AppUser
 typedef Profile = AppUser;
+
+// ------------------------------------------------------------
+// IN-APP NOTIFICATION
+// ------------------------------------------------------------
+class AppNotification {
+  final String id;
+  final String targetUser;
+  final String fromUser;
+  final String title;
+  final String message;
+  final String? placeId;
+  final DateTime time;
+  bool isRead;
+
+  AppNotification({
+    required this.id,
+    required this.targetUser,
+    required this.fromUser,
+    required this.title,
+    required this.message,
+    this.placeId,
+    DateTime? time,
+    this.isRead = false,
+  }) : time = time ?? DateTime.now();
+
+  String get timeAgo {
+    final diff = DateTime.now().difference(time);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'targetUser': targetUser,
+        'fromUser': fromUser,
+        'title': title,
+        'message': message,
+        'placeId': placeId,
+        'time': time.toIso8601String(),
+        'isRead': isRead,
+      };
+
+  factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
+        id: j['id'] ?? '',
+        targetUser: j['targetUser'] ?? '',
+        fromUser: j['fromUser'] ?? '',
+        title: j['title'] ?? 'Notification',
+        message: j['message'] ?? '',
+        placeId: j['placeId'],
+        time: j['time'] != null ? DateTime.tryParse(j['time']) ?? DateTime.now() : DateTime.now(),
+        isRead: j['isRead'] ?? false,
+      );
+}
+
+// ------------------------------------------------------------
+// SAFETY & ANIMAL HAZARD BEACON
+// ------------------------------------------------------------
+class SafetyHazardBeacon {
+  final String id;
+  final String type; // 'animal_dog', 'animal_monkey', 'animal_cattle', 'hazard_pothole', 'ramp_blocked'
+  final String title;
+  final String description;
+  final double lat;
+  final double lng;
+  final DateTime timestamp;
+  final String severity; // 'high', 'medium', 'low'
+  final String threatClass; // 'dog', 'monkey', 'cattle', 'snake', 'pothole', 'obstacle'
+  final String reportedBy;
+  final String? photoPath;
+
+  SafetyHazardBeacon({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.description,
+    required this.lat,
+    required this.lng,
+    DateTime? timestamp,
+    this.severity = 'high',
+    this.threatClass = 'dog',
+    required this.reportedBy,
+    this.photoPath,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  String get timeAgo {
+    final diff = DateTime.now().difference(timestamp);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
+
+  String get icon {
+    switch (threatClass) {
+      case 'dog':
+        return '🐕';
+      case 'monkey':
+        return '🐒';
+      case 'cattle':
+        return '🐂';
+      case 'snake':
+        return '🐍';
+      case 'pothole':
+        return '🕳️';
+      default:
+        return '⚠️';
+    }
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'type': type,
+        'title': title,
+        'description': description,
+        'lat': lat,
+        'lng': lng,
+        'timestamp': timestamp.toIso8601String(),
+        'severity': severity,
+        'threatClass': threatClass,
+        'reportedBy': reportedBy,
+        'photoPath': photoPath,
+      };
+
+  factory SafetyHazardBeacon.fromJson(Map<String, dynamic> j) => SafetyHazardBeacon(
+        id: j['id'] ?? '',
+        type: j['type'] ?? 'hazard',
+        title: j['title'] ?? 'Hazard Alert',
+        description: j['description'] ?? '',
+        lat: (j['lat'] as num?)?.toDouble() ?? 23.8143,
+        lng: (j['lng'] as num?)?.toDouble() ?? 86.4412,
+        timestamp: j['timestamp'] != null ? DateTime.tryParse(j['timestamp']) ?? DateTime.now() : DateTime.now(),
+        severity: j['severity'] ?? 'high',
+        threatClass: j['threatClass'] ?? 'dog',
+        reportedBy: j['reportedBy'] ?? 'Student',
+        photoPath: j['photoPath'],
+      );
+}

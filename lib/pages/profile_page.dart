@@ -76,15 +76,6 @@ class ProfilePage extends StatelessWidget {
               style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
             ),
             actions: [
-              // Theme toggle button
-              IconButton(
-                icon: Icon(
-                  isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                  color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
-                ),
-                tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
-                onPressed: () => store.toggleTheme(),
-              ),
               TextButton.icon(
                 icon: Icon(Icons.swap_horiz_rounded, size: 18, color: accentColor),
                 label: Text('Switch Account', style: TextStyle(color: accentColor, fontWeight: FontWeight.bold)),

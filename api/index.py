@@ -1,6 +1,8 @@
 import json
 import os
 import sys
+import time
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -9,11 +11,15 @@ DATA_DIR = "/tmp/accesspath_data"
 os.makedirs(DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(DATA_DIR, "places.json")
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
+NOTIFICATIONS_FILE = os.path.join(DATA_DIR, "notifications.json")
+HAZARDS_FILE = os.path.join(DATA_DIR, "hazards.json")
 
 # In-memory store persistent across warm lambda invocations
 _CACHE = {
     "places": [],
-    "users": []
+    "users": [],
+    "notifications": [],
+    "hazards": []
 }
 
 def load_data(filepath, key):
@@ -112,6 +118,34 @@ class handler(BaseHTTPRequestHandler):
             })
             return
 
+        # Notifications list (filtered specifically by user)
+        if req_path in ["/api/notifications", "/notifications"]:
+            parsed = urlparse(self.path)
+            qs = parse_qs(parsed.query)
+            user_param = qs.get("user", [None])[0]
+            all_notifs = load_data(NOTIFICATIONS_FILE, "notifications")
+            if user_param:
+                u_clean = user_param.strip().lower()
+                user_notifs = [n for n in all_notifs if n.get("targetUser", "").strip().lower() == u_clean or n.get("targetUserId", "").strip().lower() == u_clean]
+            else:
+                user_notifs = all_notifs
+            self._send_json_response(200, {
+                "status": "success",
+                "count": len(user_notifs),
+                "notifications": user_notifs
+            })
+            return
+
+        # Hazards & Animal Detection beacons
+        if req_path in ["/api/hazards", "/hazards"]:
+            hazards = load_data(HAZARDS_FILE, "hazards")
+            self._send_json_response(200, {
+                "status": "success",
+                "count": len(hazards),
+                "hazards": hazards
+            })
+            return
+
         self._send_json_response(404, {
             "error": "Endpoint not found",
             "path": req_path,
@@ -184,6 +218,67 @@ class handler(BaseHTTPRequestHandler):
                 self._send_json_response(404, {"error": f"Place {place_id} not found"})
             return
 
+        # Upvote / Like Review with targeted notification specifically to author
+        if req_path in ["/api/reviews/like", "/reviews/like"]:
+            payload = self._read_json_body()
+            place_id = payload.get("placeId")
+            review_user = payload.get("reviewUser")
+            liked_by = payload.get("likedBy", "A fellow student")
+            place_name = payload.get("placeName", "Campus Venue")
+
+            places = load_data(DATA_FILE, "places")
+            found = False
+            for p in places:
+                if p["id"] == place_id:
+                    for r in p.get("rv", []):
+                        if r.get("u") == review_user:
+                            r["up"] = r.get("up", 0) + 1
+                            found = True
+                            break
+                    if found:
+                        break
+            if found:
+                save_data(DATA_FILE, "places", places)
+
+            # Generate targeted notification ONLY if review author is known and not liking their own review
+            notif = None
+            if review_user and review_user.lower() != liked_by.lower():
+                notifications = load_data(NOTIFICATIONS_FILE, "notifications")
+                notif = {
+                    "id": f"notif_{int(time.time() * 1000)}",
+                    "targetUser": review_user,
+                    "fromUser": liked_by,
+                    "title": "Review Upvoted! 👍",
+                    "message": f"{liked_by} liked your accessibility feedback on {place_name}!",
+                    "placeId": place_id,
+                    "time": datetime.utcnow().isoformat() + "Z",
+                    "isRead": False
+                }
+                notifications.insert(0, notif)
+                save_data(NOTIFICATIONS_FILE, "notifications", notifications)
+
+            self._send_json_response(200, {
+                "status": "liked",
+                "placeId": place_id,
+                "notificationCreated": notif is not None,
+                "notification": notif
+            })
+            return
+
+        # Mark Notification(s) as Read
+        if req_path in ["/api/notifications/read", "/notifications/read"]:
+            payload = self._read_json_body()
+            user = payload.get("user", "").strip().lower()
+            notif_id = payload.get("id")
+            notifications = load_data(NOTIFICATIONS_FILE, "notifications")
+            for n in notifications:
+                if not user or n.get("targetUser", "").strip().lower() == user:
+                    if not notif_id or notif_id == "all" or n.get("id") == notif_id:
+                        n["isRead"] = True
+            save_data(NOTIFICATIONS_FILE, "notifications", notifications)
+            self._send_json_response(200, {"status": "success", "message": "Marked read"})
+            return
+
         # Add new venue / place
         if req_path in ["/api/places", "/places"]:
             new_place = self._read_json_body()
@@ -231,6 +326,37 @@ class handler(BaseHTTPRequestHandler):
             users.append(user)
             save_data(USERS_FILE, "users", users)
             self._send_json_response(200, {"status": "user_saved", "user": user})
+            return
+
+        # Broadcast safety hazard beacon (animal or obstacle)
+        if req_path in ["/api/hazards", "/hazards"]:
+            hazard = self._read_json_body()
+            hazards = load_data(HAZARDS_FILE, "hazards")
+            hazards = [h for h in hazards if h.get("id") != hazard.get("id")]
+            hazards.insert(0, hazard)
+            hazards = hazards[:50]
+            save_data(HAZARDS_FILE, "hazards", hazards)
+
+            # Auto-generate campus safety broadcast notification for students
+            notifs = load_data(NOTIFICATIONS_FILE, "notifications")
+            threat_icon = "🐕" if hazard.get("threatClass") == "dog" else ("🐒" if hazard.get("threatClass") == "monkey" else ("🐂" if hazard.get("threatClass") == "cattle" else "⚠️"))
+            new_notif = {
+                "id": f"notif_hazard_{int(time.time()*1000)}",
+                "targetUser": "all",
+                "fromUser": hazard.get("reportedBy", "Campus Safety Patrol"),
+                "title": f"{threat_icon} Safety Alert: {hazard.get('title')}",
+                "message": f"{hazard.get('description', 'Detected on campus path.')} Pinned on Map.",
+                "placeId": hazard.get("id"),
+                "time": datetime.utcnow().isoformat(),
+                "isRead": False
+            }
+            notifs.insert(0, new_notif)
+            save_data(NOTIFICATIONS_FILE, "notifications", notifs[:100])
+
+            self._send_json_response(201, {
+                "status": "hazard_broadcasted",
+                "hazard": hazard
+            })
             return
 
         self._send_json_response(404, {

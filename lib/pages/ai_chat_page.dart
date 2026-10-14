@@ -7,10 +7,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ai_service.dart';
 
 class AIChatPage extends StatefulWidget {
-  const AIChatPage({super.key});
+  final String? initialQuery;
+
+  const AIChatPage({super.key, this.initialQuery});
 
   @override
   State<AIChatPage> createState() => _AIChatPageState();
@@ -30,6 +33,22 @@ class _ChatMessage {
     this.isVisionAudit = false,
     DateTime? time,
   }) : time = time ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        't': text,
+        'u': isUser,
+        'img': imagePath,
+        'va': isVisionAudit,
+        'tm': time.toIso8601String(),
+      };
+
+  factory _ChatMessage.fromJson(Map<String, dynamic> j) => _ChatMessage(
+        text: j['t'] ?? '',
+        isUser: j['u'] ?? false,
+        imagePath: j['img'],
+        isVisionAudit: j['va'] ?? false,
+        time: j['tm'] != null ? DateTime.tryParse(j['tm']) ?? DateTime.now() : DateTime.now(),
+      );
 }
 
 class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateMixin {
@@ -43,6 +62,8 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
   final List<String> _suggestedPrompts = [
     'Herak Hostel me 2nd floor pe washroom accessible hai?',
     'Campus me kaunse hostels me lifts chal rahe hain?',
+    'Amber hostel ke paas stray dogs se safe wheelchair route kya hai?',
+    'SAC pathway pe monkeys se safe detour kaise karein?',
     'Central Library me wheelchair ramp aur automated doors hain?',
     'NLHC me Divyangjan priority front-row seating hai?',
   ];
@@ -57,14 +78,115 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _messages.add(
-      _ChatMessage(
-        text: _isSassyMode
-            ? 'Oh great, another human! 💅 I’m SassyBot — IIT (ISM) Dhanbad’s passive-aggressive AI.\n\nAsk me about campus ramps, elevators, or public washrooms. Try not to ask if elevators go horizontally. 🙄✨'
-            : 'Namaste! 🙏 Mai AccessBot hoon — IIT (ISM) Dhanbad ka AI Accessibility Assistant.\n\nAap campus ke kisi bhi building, Herak hostel ke lifts, Divyang washrooms, ya ramps ke baare me pooch sakte hain.',
-        isUser: false,
+    _loadChatHistory();
+    if (widget.initialQuery != null && widget.initialQuery!.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _sendMessage(widget.initialQuery!.trim());
+      });
+    }
+  }
+
+  Future<void> _loadChatHistory() async {
+    final sp = await SharedPreferences.getInstance();
+    final jsonStr = sp.getString('ai_chat_history');
+    if (jsonStr != null) {
+      try {
+        final list = (jsonDecode(jsonStr) as List)
+            .map((e) => _ChatMessage.fromJson(e))
+            .toList();
+        if (list.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _messages.clear();
+              _messages.addAll(list);
+            });
+            _scrollToBottom();
+          }
+          return;
+        }
+      } catch (_) {}
+    }
+
+    if (_messages.isEmpty && mounted) {
+      setState(() {
+        _messages.add(
+          _ChatMessage(
+            text: _isSassyMode
+                ? 'Oh great, another human! 💅 I’m SassyBot — IIT (ISM) Dhanbad’s passive-aggressive AI.\n\nAsk me about campus ramps, elevators, or public washrooms. Try not to ask if elevators go horizontally. 🙄✨'
+                : 'Namaste! 🙏 Mai AccessBot hoon — IIT (ISM) Dhanbad ka AI Accessibility Assistant.\n\nAap campus ke kisi bhi building, Herak hostel ke lifts, Divyang washrooms, ya ramps ke baare me pooch sakte hain.',
+            isUser: false,
+          ),
+        );
+      });
+    }
+  }
+
+  Future<void> _saveChatHistory() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final list = _messages.map((m) => m.toJson()).toList();
+      await sp.setString('ai_chat_history', jsonEncode(list));
+    } catch (_) {}
+  }
+
+  Future<void> _clearChatHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0F172A),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_sweep_rounded, color: Color(0xFFFF6B2B), size: 22),
+            SizedBox(width: 8),
+            Text('Clear Chat?', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Aapki purani AI chat conversation delete ho jayegi. Kya aap clear karna chahte hain?',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF4D4F),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear Chat', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
+
+    if (confirmed == true) {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove('ai_chat_history');
+      if (mounted) {
+        setState(() {
+          _messages.clear();
+          _messages.add(
+            _ChatMessage(
+              text: _isSassyMode
+                  ? 'Chat cleared! 💅 Back to square one. What campus mystery shall we solve now? 🙄✨'
+                  : 'Chat clear ho gaya hai! Namaste 🙏 Mai aapki campus accessibility me kaise sahayata kar sakta hoon?',
+              isUser: false,
+            ),
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🧹 AI Chat conversation cleared!'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -102,6 +224,7 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
       _isLoading = true;
     });
     _scrollToBottom();
+    _saveChatHistory();
 
     // Prepare history
     final history = _messages
@@ -124,6 +247,7 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
           _isLoading = false;
         });
         _scrollToBottom();
+        _saveChatHistory();
       }
     } catch (e) {
       if (mounted) {
@@ -137,6 +261,7 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
           _isLoading = false;
         });
         _scrollToBottom();
+        _saveChatHistory();
       }
     }
   }
@@ -178,6 +303,7 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
           _isLoading = false;
         });
         _scrollToBottom();
+        _saveChatHistory();
       }
     } catch (e) {
       if (mounted) {
@@ -189,6 +315,7 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
           _isLoading = false;
         });
         _scrollToBottom();
+        _saveChatHistory();
       }
     }
   }
@@ -365,6 +492,13 @@ class _AIChatPageState extends State<AIChatPage> with SingleTickerProviderStateM
               ),
             ),
           ),
+          // Clear Chat History Button
+          IconButton(
+            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.white70, size: 22),
+            tooltip: 'Clear Chat History',
+            onPressed: _clearChatHistory,
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(

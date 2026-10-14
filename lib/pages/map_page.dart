@@ -11,7 +11,9 @@ import '../store.dart';
 import '../widgets/glass_container.dart';
 import 'add_place_page.dart';
 import 'detail_page.dart';
-
+import 'vision_detector_page.dart';
+import '../services/vision_buzzer_service.dart';
+import 'ai_chat_page.dart';
 import '../widgets/ev_dashboard_widgets.dart';
 
 class MapPage extends StatefulWidget {
@@ -259,6 +261,64 @@ class _MapPageState extends State<MapPage> {
                         );
                       }),
 
+                      // Active Safety Hazard & Animal Detection Markers
+                      ...store.activeHazards.map((hz) {
+                        return Marker(
+                          point: LatLng(hz.lat, hz.lng),
+                          width: 58,
+                          height: 58,
+                          child: GestureDetector(
+                            onTap: () {
+                              _showHazardBottomSheet(context, hz, isDark);
+                              _centerOn(LatLng(hz.lat, hz.lng));
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white, width: 1.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFEF4444).withValues(alpha: 0.6),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(hz.icon, style: const TextStyle(fontSize: 13)),
+                                      const SizedBox(width: 3),
+                                      const Text(
+                                        'ALERT',
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEF4444),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+
                       // User GPS Location Pin
                       if (store.myPos != null)
                         Marker(
@@ -465,20 +525,37 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
 
-              // ---- Floating Add Public Spot Action Button ----
+              // ---- Floating Action Buttons (Add Spot & Live Vision Scanner) ----
               Positioned(
                 left: 16,
+                right: 16,
                 bottom: _selectedPlace != null ? 240 : 80,
-                child: GlassPillButton(
-                  text: '+ Add Public Spot',
-                  icon: Icons.add_location_alt_rounded,
-                  color: const Color(0xFFFF6B2B),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddPlacePage(),
+                child: Row(
+                  children: [
+                    GlassPillButton(
+                      text: '+ Add Spot',
+                      icon: Icons.add_location_alt_rounded,
+                      color: const Color(0xFFFF6B2B),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddPlacePage(),
+                        ),
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    GlassPillButton(
+                      text: 'AI Vision & Buzzer',
+                      icon: Icons.videocam_rounded,
+                      color: const Color(0xFF00F0FF),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const VisionDetectorPage(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -702,6 +779,157 @@ class _MapPageState extends State<MapPage> {
                     onCancel: () => setState(() => _isNavigating = false),
                   ),
                 ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showHazardBottomSheet(BuildContext context, SafetyHazardBeacon hz, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0B132B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(hz.icon, style: const TextStyle(fontSize: 24)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hz.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          'Reported by ${hz.reportedBy} • ${hz.timeAgo}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                hz.description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.campaign_rounded, size: 18),
+                      label: const Text('TRIGGER BUZZER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: () {
+                        ThreatType t = ThreatType.strayDog;
+                        if (hz.threatClass == 'monkey') t = ThreatType.monkey;
+                        if (hz.threatClass == 'cattle') t = ThreatType.cattle;
+                        if (hz.threatClass == 'snake') t = ThreatType.snake;
+                        if (hz.threatClass == 'pothole') t = ThreatType.potholeObstacle;
+                        VisionBuzzerService.instance.triggerEmergencyDeterrent(t);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Acoustic & Strobe Buzzer activated for ${hz.threatClass}!'),
+                            backgroundColor: const Color(0xFFEF4444),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF00F0FF),
+                        side: const BorderSide(color: Color(0xFF00F0FF)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.videocam_rounded, size: 18),
+                      label: const Text('CAMERA HUD', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ThreatType t = ThreatType.strayDog;
+                        if (hz.threatClass == 'monkey') t = ThreatType.monkey;
+                        if (hz.threatClass == 'cattle') t = ThreatType.cattle;
+                        if (hz.threatClass == 'snake') t = ThreatType.snake;
+                        if (hz.threatClass == 'pothole') t = ThreatType.potholeObstacle;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VisionDetectorPage(initialScenario: t),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.smart_toy_outlined, size: 16, color: Color(0xFF00F0FF)),
+                  label: const Text(
+                    'Ask AI Assistant Safe Pathway Guidance',
+                    style: TextStyle(color: Color(0xFF00F0FF), fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AIChatPage(
+                          initialQuery: 'How to bypass the ${hz.title} safely on my wheelchair or walk path?',
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ],
           ),
         );
