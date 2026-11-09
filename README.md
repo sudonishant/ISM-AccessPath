@@ -90,10 +90,10 @@ Comprehensive inspection data is logged for key campus landmarks:
 - **NLHC (New Lecture Hall Complex)**: Dual ramp access, audio-assisted elevator, wide lecture hall entrance doors.
 - **Health Centre**: Complete ground-level step-free ambulance porch, 24/7 emergency ramp, dedicated accessible restroom.
 
-### 4. 🤖 AccessBot — Free OpenRouter AI Campus Assistant
-- Powered by high-speed, free LLM endpoints via **OpenRouter API** (with models like `meta-llama/llama-3.2-3b-instruct:free`, `google/gemini-2.0-flash-exp:free`, and `deepseek/deepseek-r1:free`).
+### 4. AccessBot — Campus Assistant with Optional AI Proxy
+- Uses the local campus fallback by default. Online AI requests require a separately configured backend through the public `AI_PROXY_URL` setting; provider credentials stay server-side.
 - **Context-Aware Campus Knowledge**: Responds accurately to inquiries regarding ramp locations, lift status, hostel accessibility, and campus shortcuts.
-- **Offline Fallback Architecture**: Seamlessly falls back to an internal verified semantic knowledge base if offline or during API rate limits.
+- **Local Fallback**: Text requests use the local fallback when no proxy is configured or when online requests fail.
 
 ### 5. 🗺️ Live Free Mapping & Satellite View (Zero Cost, No Google API Keys)
 - Built using `flutter_map` with **OpenStreetMap** vectors and **Esri World Imagery** satellite tiles.
@@ -219,13 +219,20 @@ The following permissions are configured for location tracking and photo uploads
 <uses-permission android:name="android.permission.CAMERA"/>
 ```
 
-### Free OpenRouter AI Configuration
-AccessPath includes an integrated free LLM key in `lib/services/ai_service.dart`. To configure your own personal API key from [OpenRouter](https://openrouter.ai):
-1. Sign up on OpenRouter and generate a free API key.
-2. In `lib/services/ai_service.dart`, set your key in `_openRouterKey`:
-```dart
-static const String _openRouterKey = 'YOUR_OPENROUTER_API_KEY';
+### Optional Online AI Configuration
+
+The [AI client](lib/services/ai_service.dart) reads `AI_PROXY_URL` with `String.fromEnvironment`. It does not contain a shared provider key. With this setting unset, text assistance uses the existing local fallback and online image inspection is unavailable.
+
+Before enabling online AI, provision a backend that accepts the existing chat-completions JSON format, authenticates callers, rate-limits requests, and stores `OPENROUTER_API_KEY` server-side. The current Flutter transport does **not** attach an authentication token; implement matching client/backend authentication before exposing an internet-accessible proxy. The `HTTP-Referer` and `X-Title` headers are not authentication.
+
+After that integration is ready, pass only the non-secret proxy URL when running or building Flutter. Replace this example URL with your own endpoint:
+
+```bash
+flutter run -d chrome --dart-define=AI_PROXY_URL=https://your-proxy.example/api/chat
+flutter build apk --release --dart-define=AI_PROXY_URL=https://your-proxy.example/api/chat
 ```
+
+Never put a provider API key in Flutter source, assets, or `--dart-define`: values distributed with a client are not secrets. See [credential remediation](SECURITY_REMEDIATION.md) for rotation and cleanup requirements for any previously exposed credentials. Removing a key from source does not revoke it.
 
 ---
 
